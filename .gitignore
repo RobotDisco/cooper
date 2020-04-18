@@ -1,0 +1,33 @@
+
+# Created by https://www.gitignore.io/api/clojure
+# Edit at https://www.gitignore.io/?templates=clojure
+
+### Clojure ###
+pom.xml
+pom.xml.asc
+*.jar
+*.class
+/lib/
+/classes/
+/target/
+/checkouts/
+.lein-deps-sum
+.lein-repl-history
+.lein-plugins/
+.lein-failures
+.nrepl-port
+.nrepl-history
+.cpcache/
+.clj-kondo/.cache/
+
+### Transpiled javascript output
+/resources/public/main.js
+/resources/public/main.out/
+
+### clj dependency graph trace
+trace.edn
+
+### editor backup artifacts
+*~
+
+# End of https://www.gitignore.io/api/clojure
