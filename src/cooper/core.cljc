@@ -10,7 +10,8 @@
 
 (def ^:const +NUM_ROWS+ 4)
 (def ^:const +NUM_COLS+ 8)
-(def ^:const +PETAL_MARGIN+ 0.9)
+(def ^:const +PETAL_MARGIN+ 0.8)
+(def ^:const +PETAL_PADDING+ (- 1.0 +PETAL_MARGIN+))
 
 (defn max-petal-width [game-width]
   (* (/ game-width +NUM_COLS+)))
@@ -21,12 +22,14 @@
 
 (defn petal-x-from-index [i game-width]
   (let [mpw (max-petal-width game-width)]
-    (* (rem i +NUM_COLS+) mpw)))
+    (+ (* (rem i +NUM_COLS+) mpw)
+       (/ (* mpw +PETAL_PADDING+) 2))))
 
 (defn petal-y-from-index [i game-height]
   (let [mph (max-petal-height game-height)]
-    (- (- game-height mph)
-       (* (quot i +NUM_COLS+) mph))))
+    (+ (- (- game-height mph)
+          (* (quot i +NUM_COLS+) mph))
+       (/ (* mph +PETAL_PADDING+) 2))))
 
 (defonce *state (atom {:petals []
                        :player {}
@@ -63,8 +66,8 @@
                      (t/color [(rand) (rand) (rand) (rand)])
                      (t/translate (petal-x-from-index n game-width)
                                   (petal-y-from-index n game-height))
-                     (t/scale (max-petal-width game-width)
-                              (max-petal-height game-height))))
+                     (t/scale (* (max-petal-width game-width) +PETAL_MARGIN+)
+                              (* (max-petal-height game-height) +PETAL_MARGIN+))))
         petals (->> petals
                     vec
                     (reduce-kv i/assoc (i/->instanced-entity petal-seed))
