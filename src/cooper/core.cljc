@@ -13,23 +13,20 @@
 (def ^:const +PETAL_MARGIN+ 0.9)
 
 (defn max-petal-width [game-width]
-  (* (/ game-width +NUM_COLS+)
-     ;; Add some padding so that we see some of the ocean
-     1))
+  (* (/ game-width +NUM_COLS+)))
 
 (defn max-petal-height [game-height]
   ;; remember, we've allocated one extra row's worth of space for a scoring area
-  (* (/ game-height (+ +NUM_ROWS+ 1))
-     1))
+  (* (/ game-height (+ +NUM_ROWS+ 1))))
 
 (defn petal-x-from-index [i game-width]
   (let [mpw (max-petal-width game-width)]
-    (* mpw (mod +NUM_COLS+ i))))
+    (* (rem i +NUM_COLS+) mpw)))
 
 (defn petal-y-from-index [i game-height]
   (let [mph (max-petal-height game-height)]
-    (+ mph                              ; The first row is for the score
-       (* (mod +NUM_ROWS+ i)))))
+    (- (- game-height mph)
+       (* (quot i +NUM_COLS+) mph))))
 
 (defonce *state (atom {:petals []
                        :player {}
@@ -63,7 +60,7 @@
                        (t/project game-width game-height))
         petals (for [n (range (* +NUM_ROWS+ +NUM_COLS+))]
                  (-> petal-seed
-                     (t/color [(rand) (rand) (rand) 1])
+                     (t/color [(rand) (rand) (rand) (rand)])
                      (t/translate (petal-x-from-index n game-width)
                                   (petal-y-from-index n game-height))
                      (t/scale (max-petal-width game-width)
