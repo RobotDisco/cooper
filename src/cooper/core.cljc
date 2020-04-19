@@ -63,7 +63,7 @@
                        (t/project game-width game-height))
         petals (for [n (range (* +NUM_ROWS+ +NUM_COLS+))]
                  (-> petal-seed
-                     (t/color [(rand) (rand) (rand) (rand)])
+                     (t/color [(/ 170 255) (/ 170 255) (/ 85 255) 1])
                      (t/translate (petal-x-from-index n game-width)
                                   (petal-y-from-index n game-height))
                      (t/scale (* (max-petal-width game-width) +PETAL_MARGIN+)
