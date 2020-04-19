@@ -11,7 +11,7 @@
                 n (.get *width)]
             (MemoryUtil/memFree *width)
             n)
-     :cljs (-> game :context .-canvas .-clientHeight)))
+     :cljs (-> game :context .-canvas .-clientWidth)))
 
 (defn get-height [game]
   #?(:clj (let [*height (MemoryUtil/memAllocInt 1)
