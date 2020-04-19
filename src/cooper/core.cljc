@@ -31,8 +31,11 @@
           (* (quot i +NUM_COLS+) mph))
        (/ (* mph +PETAL_PADDING+) 2))))
 
+(defn player-x [player])
+
 (defonce *state (atom {:petals []
-                       :player {}
+                       :player {:x 0
+                                :y 0}
                        :level 0
                        :score 0
                        :points 0}))
@@ -59,7 +62,6 @@
                                (t/scale game-width (* game-height (/ 1 5))))
                           (c/compile game))
         petal-seed (-> (ge/->entity game e/rect)
-                       (assoc :viewport {:x 0 :y 0 :width game-width :height game-height})
                        (t/project game-width game-height))
         petals (for [n (range (* +NUM_ROWS+ +NUM_COLS+))]
                  (-> petal-seed
@@ -71,13 +73,29 @@
         petals (->> petals
                     vec
                     (reduce-kv i/assoc (i/->instanced-entity petal-seed))
-                    (c/compile game))]
+                    (c/compile game))
+        player (let [player-size (min (* (max-petal-width game-width) 0.25)
+                                      (* (max-petal-height game-height) 0.25))]
+                 (-> (ge/->entity game e/rect)
+                     (t/project game-width game-height)
+                     (t/color [0 0 0 1])
+                     (t/translate (petal-x-from-index 0 game-width)
+                                  (petal-y-from-index 0 game-height))
+                     (t/scale player-size player-size)))
+        chicken (let [player-size (min (* (max-petal-width game-width) 0.25)
+                                      (* (max-petal-height game-height) 0.25))]
+                 (-> (ge/->entity game e/rect)
+                     (t/project game-width game-height)
+                     (t/color [(/ 171 255) (/ 108 255) (/ 36 255) 1])
+                     (t/translate (petal-x-from-index 31 game-width)
+                                  (petal-y-from-index 31 game-height))
+                     (t/scale player-size player-size)))]
     (when (and (pos? game-width) (pos? game-height))
       ;; render the blue background
       (c/render game (update screen-entity :viewport
                              assoc :width game-width :height game-height))
       (c/render game score-entity)
-      (c/render game petals)))
+      (c/render game petals)
+      (c/render game (c/compile game player))
+      (c/render game (c/compile game chicken))))
   game)
-    
-        
