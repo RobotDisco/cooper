@@ -43,9 +43,10 @@
        (/ (* mph +PETAL_PADDING+) 2))))
 
 (defn make-player []
-  {:row 1 :col 0})
+  {:row 0 :col 0})
 
-(defonce *state (atom {:petals []
+(defonce *state (atom {:pressed-keys #{}
+                       :petals []
                        :player (make-player)
                        :level 0
                        :score 0
@@ -65,7 +66,8 @@
    :clear {:color [(/ 85 255) (/ 85 255) (/ 170 255) 1] :depth 1}})
 
 (defn tick [game]
-  (let [game-width (utils/get-width game)
+  (let [{:keys [player] :as state} @*state
+        game-width (utils/get-width game)
         game-height (utils/get-height game)
         score-entity (->> (-> (ge/->entity game e/rect)
                                (t/project game-width game-height)
@@ -87,7 +89,7 @@
                     (c/compile game))
         player (let [player-size (min (* (max-petal-width game-width) 0.25)
                                       (* (max-petal-height game-height) 0.25))
-                     {:keys [row col]} (:player @*state)]
+                     {:keys [row col]} player]
                  (-> (ge/->entity game e/rect)
                      (t/project game-width game-height)
                      (t/color [0 0 0 1])
@@ -102,12 +104,22 @@
                      (t/translate (petal-x-from-index 31 game-width)
                                   (petal-y-from-index 31 game-height))
                      (t/scale player-size player-size)))]
-    (when (and (pos? game-width) (pos? game-height))
+  (when (and (pos? game-width) (pos? game-height))
       ;; render the blue background
       (c/render game (update screen-entity :viewport
                              assoc :width game-width :height game-height))
+      ;; render all game elements
       (c/render game score-entity)
       (c/render game petals)
       (c/render game (c/compile game player))
-      (c/render game (c/compile game chicken))))
+      (c/render game (c/compile game chicken))
+      ;; advance the game state
+      (swap! *state
+             (fn [{:keys [pressed-keys] :as state}]
+               (cond
+                 (contains? pressed-keys :left) (update-in state [:player :col] dec)
+                 (contains? pressed-keys :right) (update-in state [:player :col] inc)
+                 (contains? pressed-keys :up) (update-in state [:player :row] inc)
+                 (contains? pressed-keys :down) (update-in state [:player :row] dec)
+                 :else state)))))
   game)
