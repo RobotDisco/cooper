@@ -31,11 +31,22 @@
           (* (quot i +NUM_COLS+) mph))
        (/ (* mph +PETAL_PADDING+) 2))))
 
-(defn player-x [player])
+(defn x-from-col [row game-width]
+  (let [mpw (max-petal-width game-width)]
+    (+ (* row mpw)
+       (/ (* mpw +PETAL_PADDING+) 2))))
+
+(defn y-from-row [col game-height]
+  (let [mph (max-petal-height game-height)]
+    (+ (- (- game-height mph)
+          (* col mph))
+       (/ (* mph +PETAL_PADDING+) 2))))
+
+(defn make-player []
+  {:row 1 :col 0})
 
 (defonce *state (atom {:petals []
-                       :player {:x 0
-                                :y 0}
+                       :player (make-player)
                        :level 0
                        :score 0
                        :points 0}))
@@ -75,12 +86,13 @@
                     (reduce-kv i/assoc (i/->instanced-entity petal-seed))
                     (c/compile game))
         player (let [player-size (min (* (max-petal-width game-width) 0.25)
-                                      (* (max-petal-height game-height) 0.25))]
+                                      (* (max-petal-height game-height) 0.25))
+                     {:keys [row col]} (:player @*state)]
                  (-> (ge/->entity game e/rect)
                      (t/project game-width game-height)
                      (t/color [0 0 0 1])
-                     (t/translate (petal-x-from-index 0 game-width)
-                                  (petal-y-from-index 0 game-height))
+                     (t/translate (x-from-col col game-width)
+                                  (y-from-row row game-height))
                      (t/scale player-size player-size)))
         chicken (let [player-size (min (* (max-petal-width game-width) 0.25)
                                       (* (max-petal-height game-height) 0.25))]
