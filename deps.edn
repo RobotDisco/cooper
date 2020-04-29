@@ -6,6 +6,6 @@
                               com.bhauman/figwheel-main {:mvn/version "0.2.4"}
                               orchestra {:mvn/version "2019.02.06-1"}
                               expound {:mvn/version "0.7.2"}}
-                 :main-opts ["dev.clj"]
+                 :main-opts ["tasks/dev.clj"]
                  :jvm-opts ["-Xmx1g"]}
            :macos {:jvm-opts ["-XstartOnFirstThread"]}}}
