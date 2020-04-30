@@ -1,5 +1,5 @@
 (ns cooper.engine.start
-  (:require [cooper.core :as c]
+  (:require [cooper.game.core :as c]
             [play-cljc.gl.core :as pc]
             [goog.events :as events]))
 

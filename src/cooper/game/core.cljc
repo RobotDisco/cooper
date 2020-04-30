@@ -1,4 +1,4 @@
-(ns cooper.core
+(ns cooper.game.core
   (:require [cooper.engine.utils :as utils]
             [play-cljc.gl.core :as c]
             [play-cljc.primitives-2d :as e]
