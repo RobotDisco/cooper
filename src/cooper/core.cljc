@@ -1,5 +1,5 @@
 (ns cooper.core
-  (:require [cooper.utils :as utils]
+  (:require [cooper.engine.utils :as utils]
             [play-cljc.gl.core :as c]
             [play-cljc.primitives-2d :as e]
             [play-cljc.gl.entities-2d :as ge]
