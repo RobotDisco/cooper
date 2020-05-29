@@ -2,10 +2,10 @@
   (:require [net.robot-disco.cooper.core :as sut]
             [clojure.test :as t :refer [deftest is]]))
 
-(deftest visible->hidden
+(deftest visible-hidden
   (let [p (sut/make-visible-petal 0 10)]
     (is (sut/hidden? (sut/tick p)))))
 
-(deftest hidden->visible
+(deftest hidden-visible
   (let [p (sut/make-hidden-petal 0)]
     (is (not (sut/hidden? (sut/tick p))))))
