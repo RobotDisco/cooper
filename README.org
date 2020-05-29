@@ -1,0 +1,22 @@
+* Cooper
+This is a game, dedicated to my cat (2009-2020).
+
+It is very much inspired by the classic 1991 DOS game [[https://www.retrogames.cz/play_477-DOS.php][Perestroika/Toppler]]
+** Installation
+ Install the Clojure binary and its JVM dependency. The official website has some pretty good [[https://clojure.org/guides/getting_started][instructions]] on how to do this for major operating systems, but chances are it is available in your preferred package manager.
+** How to run
+   TODO
+** How to play
+   Your goal is to get to the coin on the top-right lily pad.
+
+   Use the arrow keys to hop across the petals. The petals will shrink and disappear, so be careful!
+
+   Along the way you will find little coloured dots. These dots will score you points.
+
+   Avoid the bureaucrats who are moving around the petals as well!
+** Contributing
+   This is a very personal project, and a learning project. My apologies, but I likely won't be accepting code contributions, although I will always listen to the wisdom of elders and the experienced.
+** License
+   [[https://choosealicense.com/licenses/epl-1.0/][EPL 1.0]]
+   
+
