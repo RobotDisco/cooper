@@ -1,7 +1,6 @@
 (ns net.robot-disco.cooper.core)
 
-(def
-  ^:const max-size
+(def ^:const max-size
   "Maximum size of petal"
   100)
 (def ^:const max-countdown
