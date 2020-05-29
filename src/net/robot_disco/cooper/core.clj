@@ -8,22 +8,21 @@
   "Maximum number of ticks petal can remain hidden for."
   10)
 
-(defn make-petal
-  "Construct a petal. A `hidden` petal is one that is waiting to respawn; a player will die if they try to move here.  non-hidden petal is one the player can step on. The `rate` determines how quickly a visible petal will string or how long it will taken a hidden petal to respawn into a visible one."
-  [rate hidden]
-  (let [val (if hidden
-              max-countdown
-              max-size)]
-    [val rate hidden]))
+(defn make-visible-petal
+  "Construct a petal with a `starting-size`. The `rate` determines how
+  quickly a visible petal will shrink."
+  [starting-size rate]
+  [false starting-size rate])
+
+(defn make-hidden-petal
+  "Construct a hidden petal that will become visible in `respawn-count` ticks."
+  [respawn-count]
+  [true respawn-count])
 
 (defn hidden?
-  "Return true if the petal is hidden, false if the petal is visible."
-  [[_ _ hidden]]
+  "Return true if the `petal` is hidden, false if it is visible."
+  [[hidden :as _petal]]
   hidden)
-
-(def visible?
-  "Return true if the petal is visible, false if the petal is hidden."
-  (complement #'hidden?))
 
 (defmulti tick
   "Advance a `petal`, causing it to either shrink according to its specified rate
@@ -31,20 +30,20 @@
   (fn [petal] (hidden? petal)))
 
 (defmethod tick true
-  [[countdown rate :as petal]]
+  [[_ countdown :as petal]]
   (if (zero? countdown)
-    (make-petal 10 false)
-    (update petal 0 #(- % rate))))
+    (make-visible-petal 100 10)
+    (update petal 1 dec)))
 
 (defmethod tick false
-  [[size rate :as petal]]
+  [[_ size rate :as petal]]
   (if (zero? size)
-    (make-petal 1 true)
-    (update petal 0 #(- % rate))))
+    (make-hidden-petal 10)
+    (update petal 1 #(- % rate))))
 
 ;; Snippets to keep around for REPL-driven development 
 (comment
 
   (println "Hello World")
-  (take 30 (iterate tick (make-petal 10 false))))
+  (take 30 (iterate tick (make-visible-petal 100 10))))
 
