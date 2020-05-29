@@ -12,11 +12,15 @@
   "Construct a petal with a `starting-size`. The `rate` determines how
   quickly a visible petal will shrink."
   [starting-size rate]
+  {:pre [(not (neg? starting-size))
+         (<= starting-size max-size)
+         (pos? rate)]}
   [false starting-size rate])
 
 (defn make-hidden-petal
   "Construct a hidden petal that will become visible in `respawn-count` ticks."
   [respawn-count]
+  {:pre [(not (neg? respawn-count))]}
   [true respawn-count])
 
 (defn hidden?
