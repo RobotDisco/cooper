@@ -1,19 +1,22 @@
 (ns net.robot-disco.cooper.core)
 
+(def ^:const MAX_SIZE 100)
+
 (defn make-petal
   "rate - What percentage of the petal disappears with every tick?"
   [rate]
-  [1.0 rate])
+  [MAX_SIZE rate])
 
-(defn petal-size [[size _]]
+(defn petal-size [[size]]
   size)
 
 (defn tick [[_ rate :as petal]]
-  (update petal 0 #(- % rate)))
+  (-> petal
+      (update 0 #(max (- % rate) 0))))
 
 ;; Snippets to keep around for REPL-driven development 
 (comment
 
   (println "Hello World")
-  (take 11 (iterate tick (make-petal 0.1))))
+  (take 20 (iterate tick (make-petal 10))))
 
