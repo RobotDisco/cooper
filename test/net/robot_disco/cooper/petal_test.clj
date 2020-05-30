@@ -3,9 +3,9 @@
             [clojure.test :as t :refer [deftest is]]))
 
 (deftest visible-hidden
-  (let [p (sut/make-visible-petal 0 10)]
+  (let [p (sut/make-visible 0 10 (repeat 10) (repeat 10))]
     (is (sut/hidden? (sut/tick p)))))
 
 (deftest hidden-visible
-  (let [p (sut/make-hidden-petal 0)]
+  (let [p (sut/make-hidden 0 (repeat 10) (repeat 10))]
     (is (not (sut/hidden? (sut/tick p))))))
