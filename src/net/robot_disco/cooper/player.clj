@@ -7,22 +7,22 @@
 (def ^:const MAX-COL 7)
 
 
-(defn player-left [player]
+(defn move-left [player]
   (update player :col #(max MIN-COL (dec %))))
 
-(defn player-right [player]
+(defn move-right [player]
   (update player :col #(min MAX-COL (inc %))))
 
-(defn player-up [player]
+(defn move-up [player]
   (update player :row #(min MAX-ROW (inc %))))
 
-(defn player-down [player]
+(defn move-down [player]
   (update player :row #(max MIN-ROW (dec %))))
 
 
-(defn player-row [{:keys [row]}]
+(defn row [{:keys [row]}]
   row)
 
-(defn player-col [{:keys [col]}]
+(defn col [{:keys [col]}]
   col)
 
