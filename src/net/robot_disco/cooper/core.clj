@@ -3,7 +3,7 @@
             [clojure.string :as str]))
 
 (defn my-loop []
-  (loop [game-board (take 32 (repeatedly (fn [] (p/make-hidden 10 (repeatedly #(+ 1 (rand-int 20))) (repeatedly #(+ 1 (rand-int 10)))))))]
+  (loop [game-board (take 32 (repeatedly (fn [] (p/make-petal true 100 10 (repeatedly #(+ 1 (rand-int 20))) (repeatedly #(+ 10 (rand-int 20)))))))]
     (loop [row (take 8 game-board)
            rest (drop 8 game-board)]
       (let [string (map #(format "%03d%s" (get % 1) (if (p/hidden? %) "h" " ")) row)
@@ -15,7 +15,7 @@
           (newline))))
     (if (= (read-line) "q")
       nil
-      (recur (map p/tick game-board)))))
+      (recur (map p/advance game-board)))))
 
 (comment
   (require 'net.robot-disco.cooper.core :reload-all)

@@ -1,69 +1,112 @@
 (ns net.robot-disco.cooper.petal
-  (:require [clojure.spec.alpha :as s]))
+  (:require [clojure.spec.alpha :as s]
+            [clojure.set :as set]))
 
+;;; Magic numbers
 (def ^:const max-size
   "Maximum size of petal"
   100)
+(def ^:const min-size
+  "Minimum size of petal"
+  0)
 
-(s/def ::rate-seq (s/every (s/and int? pos?)))
-(s/def ::countdown-seq (s/every (s/and int? pos?)))
+;;; Spec for internal components
+(s/def ::hidden boolean?)
+(s/def ::size (s/and (complement neg?)))
+(s/def ::rate pos?)
+(s/def ::rates (s/every ::rate))
 
-(s/def ::visible-size (s/and (complement neg?)))
-(s/def ::visible-rate pos?)
-(s/def ::hidden-countdown (s/and (complement neg?)))
+;;; Spec for public components
+(s/def ::petal (s/tuple ::hidden ::size :rate ::rates ::rates))
 
-(s/def ::visible-petal (s/tuple false? ::visible-size ::visible-rate ::rate-seq ::countdown-seq))
-(s/def ::hidden-petal (s/tuple true? ::hidden-countdown ::visible-rate ::countdown-seq))
-(s/def ::petal (s/alt :visible ::visible-petal :hidden ::hidden-petal))
+(s/fdef make-petal
+  :args (s/cat :hidden ::hidden
+               :size ::size
+               :current-rate ::rate
+               :visible-rates ::rates
+               :hidden-rates ::rates)
+  :ret ::petal
+  :fn #(set/subset? (-> % :args set) (-> % :ret set)))
+(defn make-petal
+  "Create a petal structure from the following:
 
-(defn make-visible
-  "Construct a petal with a `starting-size`. The `rate` determines how quickly
-  a visible petal will shrink. `rseq` is an infinite sequence that will
-  determine the rate of shrinkage on every respawn. `cseq` is an infinite
-  sequence that will determine the amount of time a empty petal will wait
-  before respawning."
-  [starting-size rate rseq cseq]
-  {:pre [(s/assert ::visible-size starting-size)
-         (s/assert ::visible-rate rate)
-         (s/assert ::rate-seq rseq)
-         (s/assert ::countdown-seq cseq)]
-   :post [#(s/assert ::visible-petal %)]}
-  [false starting-size rate rseq cseq])
+  Inputs:
+  `hidden`: Is the petal currently hidden?
+  `size`: The starting size of the petal.
+  `current-rate`: The initial rate the petal shrinks by on each tick.
+  `visible-rates`: An infinite sequence of shrinking rates for visible petals.
+  `hidden-rates`: An infinite sequence of shrinking rates for hidden petals.
 
-(defn make-hidden
-  "Construct a hidden petal that will become visible in `respawn-count` ticks."
-  [respawn-count rseq cseq]
-  {:pre [(s/assert ::hidden-countdown respawn-count)
-         (s/assert ::rate-seq rseq)
-         (s/assert ::countdown-seq cseq)]
-   :post [#(s/assert ::hidden-petal %)]}
-  [true respawn-count rseq cseq])
+  Returns:
+  A petal instance."
+  [hidden size current-rate visible-rates hidden-rates]
+  [hidden size current-rate visible-rates hidden-rates])
 
+(s/fdef hidden?
+  :args ::petal
+  :ret boolean?)
 (defn hidden?
-  "Return true if the `petal` is hidden, false if it is visible."
-  [[hidden :as _petal]]
-  {:pre [(s/assert ::petal _petal)]
-   :post [#(s/assert boolean? %)]}
+  [[hidden]]
   hidden)
 
-(defmulti tick
-  "Advance a `petal`, causing it to either shrink according to its specified rate
-  or to count down until the tick at which it respawns as a new visible petal."
-  (fn [petal] (hidden? petal)))
+(s/fdef visible?
+  :args ::petal
+  :ret boolean?)
+(def visible?
+  (complement #'hidden?))
 
-(defmethod tick true
-  [[_ countdown [next-rate & rrest] cseq :as petal]]
-  (if (zero? countdown)
-    (make-visible max-size next-rate rrest cseq)
-    (update petal 1 dec)))
+(s/fdef size
+  :args ::petal
+  :ret ::size)
+(defn size [[_ size]]
+  size)
 
-(defmethod tick false
-  [[_ size rate rseq [next-countdown & crest] :as petal]]
-  (if (pos? size)
-    (update petal 1 #(- % rate))
-    (make-hidden next-countdown rseq crest)))
+(s/fdef current-rate
+  :args ::petal
+  :ret ::rate)
+(defn current-rate [[_ _ current-rate]]
+  current-rate)
 
-;; Snippets to keep around for REPL-driven development 
-(comment
-  (take 30 (iterate tick (make-visible 100 10 (repeat 10) (repeat 10))))
-  (take 30 (iterate tick (make-hidden 10 (repeatedly #(+ 1 (rand-int 10))) (repeatedly #(+ 1 (rand-int 10)))))))
+(s/fdef visible-rates
+  :args ::petal
+  :ret ::rates)
+(defn visible-rates [[_ _ _ visible-rates]]
+  visible-rates)
+
+(s/fdef hidden-rates
+  :args ::petal
+  :ret ::rates)
+(defn hidden-rates [[_ _ _ _ hidden-rates]]
+  hidden-rates)
+
+(s/fdef advance
+  :args ::petal
+  :ret ::petal)
+(defn advance
+  "Advance a petal with the passage of time.
+
+  A petal with a non-zero size will shrink by its current rate.
+
+  A petal with zero size will flip from visible to hidden or vice-versa.
+  The new rate will be pulled by its accompanying infinite sequence for visible
+  or hidden rates, respectively."
+  [petal]
+  (if (zero? (size petal))
+    (if (hidden? petal)
+      (let [[next-rate & rest-of-rates] (visible-rates petal)]
+        (make-petal (not (hidden? petal))
+                    max-size
+                    next-rate
+                    rest-of-rates
+                    (hidden-rates petal)))
+      (let [[next-rate & rest-of-rates] (hidden-rates petal)]
+        (make-petal (not (hidden? petal))
+                    max-size
+                    next-rate
+                    (visible-rates petal)
+                    rest-of-rates)))
+    (make-petal (hidden? petal)
+                (max 0 (- (size petal) (current-rate petal)))
+                (current-rate petal)
+                (visible-rates petal)
+                (hidden-rates petal))))

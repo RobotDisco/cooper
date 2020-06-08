@@ -19,7 +19,6 @@
 (defn move-down [player]
   (update player :row #(max MIN-ROW (dec %))))
 
-
 (defn row [{:keys [row]}]
   row)
 
