@@ -20,17 +20,4 @@ pom.xml.asc
 .cpcache/
 .clj-kondo/.cache/
 
-### Transpiled javascript output
-/resources/public/main.js
-/resources/public/main.out/
-
-### clj dependency graph trace
-trace.edn
-
-### rebel-readline
-.rebel_readline_history
-
-### editor backup artifacts
-*~
-
 # End of https://www.gitignore.io/api/clojure

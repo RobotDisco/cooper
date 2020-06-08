@@ -1,11 +1,1 @@
-{:paths ["src" "resources"]
- :deps {org.clojure/clojure {:mvn/version "1.10.1"}
-        play-cljc {:mvn/version "0.8.6"}}
- :aliases {:dev {:extra-deps {org.clojure/clojurescript {:mvn/version "1.10.520"}
-                              com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
-                              com.bhauman/figwheel-main {:mvn/version "0.2.4"}
-                              orchestra {:mvn/version "2019.02.06-1"}
-                              expound {:mvn/version "0.7.2"}}
-                 :main-opts ["-m figwheel.main" "-b dev" "-r"]}
-           :cider {:main-opts []}
-           :macos {:jvm-opts ["-XstartOnFirstThread"]}}}
+{:deps {org.clojure/clojure {:mvn/version "1.10.1"}}}
