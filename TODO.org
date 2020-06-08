@@ -1,0 +1,5 @@
+- [ ] Figure out how to get cider register test code for refactoring.
+- [ ] Convert current demo main-loop function into a binary
+- [ ] Rename ~petal/size~ -> ~petal/current-size~
+- [ ] Player movement code can probably be refactored into a common function if I'm actually happy with it.
+- [ ] Should I install a test runner plugin? Maybe this doesn't matter if cider is smart enough to pick up test code and I can just run `cider-auto-test-mode`
