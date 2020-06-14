@@ -12,17 +12,18 @@
     (nth petals (+ (* c/rows row) col))))
 
 (defn game-player
-  [game]
-  (:player game))
+  [{:keys [player]}]
+  player)
 
 (defn game-petals
-  [game]
-  (:petals game))
+  [{:keys [petals]}]
+  petals)
 
 (defn player-dead? [game]
   (let [petal (player-petal (game-player game) (game-petals game))]
     (pt/hidden? petal)))
 
+;;; Demo game loop
 (defn my-loop []
   (loop [game-board (take 32 (repeatedly (fn [] (pt/make-petal true 100 10 (repeatedly #(+ 1 (rand-int 20))) (repeatedly #(+ 10 (rand-int 20)))))))]
     (loop [row (take 8 game-board)
