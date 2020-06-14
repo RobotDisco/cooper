@@ -13,6 +13,8 @@
 (defn move-right [player]
   (update player :col #(min MAX-COL (inc %))))
 
+(defn make-player [] {:row 0 :col 0})
+
 (defn move-up [player]
   (update player :row #(min MAX-ROW (inc %))))
 

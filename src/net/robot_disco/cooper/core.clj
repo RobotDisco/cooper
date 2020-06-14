@@ -1,12 +1,27 @@
 (ns net.robot-disco.cooper.core
-  (:require [net.robot-disco.cooper.petal :as p]
+  (:require [net.robot-disco.cooper.petal :as pt]
             [clojure.string :as str]))
 
+(def ^:const ROWS 4)
+(def ^:const COLS 8)
+
+(defn make-game [player petals]
+  {:player player
+   :petals petals})
+
+(defn player-petal [player petals]
+  (let [{:keys [row col]} player]
+    (nth petals (+ (* ROWS row) col))))
+
+(defn player-dead? [game]
+  (let [petal (player-petal (:player game) (:petals game))]
+    (pt/hidden? petal)))
+
 (defn my-loop []
-  (loop [game-board (take 32 (repeatedly (fn [] (p/make-petal true 100 10 (repeatedly #(+ 1 (rand-int 20))) (repeatedly #(+ 10 (rand-int 20)))))))]
+  (loop [game-board (take 32 (repeatedly (fn [] (pt/make-petal true 100 10 (repeatedly #(+ 1 (rand-int 20))) (repeatedly #(+ 10 (rand-int 20)))))))]
     (loop [row (take 8 game-board)
            rest (drop 8 game-board)]
-      (let [string (map #(format "%03d%s" (get % 1) (if (p/hidden? %) "h" " ")) row)
+      (let [string (map #(format "%03d%s" (get % 1) (if (pt/hidden? %) "h" " ")) row)
             string (str/join " " string)]
         (println string)
         (if (seq rest)
@@ -15,18 +30,7 @@
           (newline))))
     (if (= (read-line) "q")
       nil
-      (recur (map p/advance game-board)))))
+      (recur (map pt/advance game-board)))))
 
 (comment
-  (require 'net.robot-disco.cooper.core :reload-all)
-
-  (def ^:const max-rate
-    "Maximum shrinking rate of petal"
-    20)
-  (def ^:const max-countdown
-    "Maximum number of ticks petal can remain hidden for."
-    10)
-
-  ;; Create the game board and iterate some ticks
-  (take 2 (iterate (partial map p/tick) (take (* rows cols) (repeatedly #(p/make-visible 100 10)))))
-  (take 2 (repeatedly (fn [] (p/make-hidden 10 (repeatedly #(+ 1 (rand-int 20))) (repeatedly #(+ 1 (rand-int 10))))))))
+  (require 'net.robot-disco.cooper.core :reload-all))
