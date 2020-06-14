@@ -1,25 +1,19 @@
-(ns net.robot-disco.cooper.player)
-
-(def MIN-ROW 0)
-(def MAX-ROW 3)
-
-(def MIN-COL 0)
-(def MAX-COL 7)
-
+(ns net.robot-disco.cooper.player
+  (:require [net.robot-disco.cooper.constants :as c]))
 
 (defn move-left [player]
-  (update player :col #(max MIN-COL (dec %))))
+  (update player :col #(max c/min-col (dec %))))
 
 (defn move-right [player]
-  (update player :col #(min MAX-COL (inc %))))
+  (update player :col #(min c/max-col (inc %))))
 
-(defn make-player [] {:row 0 :col 0})
+(defn make-player [] {:row c/min-row :col c/min-col})
 
 (defn move-up [player]
-  (update player :row #(min MAX-ROW (inc %))))
+  (update player :row #(min c/max-row (inc %))))
 
 (defn move-down [player]
-  (update player :row #(max MIN-ROW (dec %))))
+  (update player :row #(max c/min-row (dec %))))
 
 (defn row [{:keys [row]}]
   row)

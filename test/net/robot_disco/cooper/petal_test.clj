@@ -12,7 +12,7 @@
   (let [old (sut/make-petal false 0 1 (iterate inc 2) (iterate inc 3))
         new (sut/advance old)]
     (is (sut/hidden? new))
-    (is (= sut/max-size (sut/countdown new)))
+    (is (= sut/max-countdown (sut/countdown new)))
     (is (= (-> old sut/hidden-rates first)
            (sut/current-rate new)))
     (is (= (-> old sut/hidden-rates (nth 1))
@@ -22,7 +22,7 @@
   (let [old (sut/make-petal true 0 1 (iterate inc 2) (iterate inc 3))
         new (sut/advance old)]
     (is (sut/visible? new))
-    (is (= sut/max-size (sut/countdown new)))
+    (is (= sut/max-countdown (sut/countdown new)))
     (is (= (-> old sut/visible-rates first)
            (sut/current-rate new)))
     (is (= (-> old sut/visible-rates (nth 1))

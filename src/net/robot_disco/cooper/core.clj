@@ -1,9 +1,7 @@
 (ns net.robot-disco.cooper.core
-  (:require [net.robot-disco.cooper.petal :as pt]
+  (:require [net.robot-disco.cooper.constants :as c]
+            [net.robot-disco.cooper.petal :as pt]
             [clojure.string :as str]))
-
-(def ROWS 4)
-(def COLS 8)
 
 (defn make-game [player petals]
   {:player player
@@ -11,7 +9,7 @@
 
 (defn player-petal [player petals]
   (let [{:keys [row col]} player]
-    (nth petals (+ (* ROWS row) col))))
+    (nth petals (+ (* c/rows row) col))))
 
 (defn game-player
   [game]
