@@ -2,8 +2,8 @@
   (:require [net.robot-disco.cooper.petal :as pt]
             [clojure.string :as str]))
 
-(def ^:const ROWS 4)
-(def ^:const COLS 8)
+(def ROWS 4)
+(def COLS 8)
 
 (defn make-game [player petals]
   {:player player
@@ -13,8 +13,16 @@
   (let [{:keys [row col]} player]
     (nth petals (+ (* ROWS row) col))))
 
+(defn game-player
+  [game]
+  (:player game))
+
+(defn game-petals
+  [game]
+  (:petals game))
+
 (defn player-dead? [game]
-  (let [petal (player-petal (:player game) (:petals game))]
+  (let [petal (player-petal (game-player game) (game-petals game))]
     (pt/hidden? petal)))
 
 (defn my-loop []

@@ -1,10 +1,10 @@
 (ns net.robot-disco.cooper.player)
 
-(def ^:const MIN-ROW 0)
-(def ^:const MAX-ROW 3)
+(def MIN-ROW 0)
+(def MAX-ROW 3)
 
-(def ^:const MIN-COL 0)
-(def ^:const MAX-COL 7)
+(def MIN-COL 0)
+(def MAX-COL 7)
 
 
 (defn move-left [player]
