@@ -25,7 +25,7 @@
 
 ;;; Demo game loop
 (defn my-loop []
-  (loop [game-board (take 32 (repeatedly (fn [] (pt/make-petal true 100 10 (repeatedly #(+ 1 (rand-int 20))) (repeatedly #(+ 10 (rand-int 20)))))))]
+  (loop [game-board (repeatedly 32 (fn [] (pt/make-petal true 100 10 (repeatedly #(inc (rand-int 20))) (repeatedly #(+ 10 (rand-int 20))))))]
     (loop [row (take 8 game-board)
            rest (drop 8 game-board)]
       (let [string (map #(format "%03d%s" (get % 1) (if (pt/hidden? %) "h" " ")) row)
@@ -35,8 +35,7 @@
           (recur (take 8 rest)
                  (drop 8 rest))
           (newline))))
-    (if (= (read-line) "q")
-      nil
+    (when-not (= (read-line) "q")
       (recur (map pt/advance game-board)))))
 
 (comment
