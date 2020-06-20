@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+
+clojure -A:lint -- --lint dev:src:test
