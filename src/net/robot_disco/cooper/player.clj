@@ -4,10 +4,10 @@
 
 (s/def ::row int?)
 (s/def ::col int?)
+(s/def ::player (s/keys :req [::row ::col]))
 
-(s/def ::player {:row ::row, :col ::col})
 
-(s/fdef make-player :ret ::player)
+(s/fdef make-player :args [] :ret ::player)
 (defn make-player [] {:row c/min-row :col c/min-col})
 
 (s/fdef move-left :args (s/cat :player ::player) :ret ::player)

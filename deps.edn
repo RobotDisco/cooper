@@ -1,7 +1,8 @@
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.10.1"}}
  :aliases
- {:test {:extra-paths ["test"]}
+ {:test {:extra-paths ["test"]
+         :extra-deps {orchestra {:mvn/version "2019.02.06-1"}}}
 
   :runner
   {:extra-deps {com.cognitect/test-runner
@@ -11,9 +12,7 @@
                "-d" "test"]}
 
   :dev
-  {:extra-paths ["dev" "test"]
-   :extra-deps
-   {orchestra {:mvn/version "2019.02.06-1"}}}
+  {:extra-paths ["dev" "test"]}
 
   :lint {:extra-deps {clj-kondo {:mvn/version "2020.06.12"}}
          :main-opts ["-m" "clj-kondo.main"]}

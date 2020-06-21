@@ -1,6 +1,5 @@
 (ns net.robot-disco.cooper.petal
-  (:require [clojure.spec.alpha :as s]
-            [clojure.set :as set]))
+  (:require [clojure.spec.alpha :as s]))
 
 ;;; Magic numbers
 (def max-countdown
@@ -17,7 +16,7 @@
 (s/def ::rates (s/every ::rate))
 
 ;;; Spec for public components
-(s/def ::petal (s/tuple ::hidden ::countdown :rate ::rates ::rates))
+(s/def ::petal (s/tuple ::hidden ::countdown ::rate ::rates ::rates))
 
 (s/fdef make-petal
   :args (s/cat :hidden ::hidden
@@ -25,8 +24,7 @@
                :current-rate ::rate
                :visible-rates ::rates
                :hidden-rates ::rates)
-  :ret ::petal
-  :fn #(set/subset? (-> % :args set) (-> % :ret set)))
+  :ret ::petal)
 (defn make-petal
   "Create a petal structure from the following:
 
@@ -43,44 +41,44 @@
   [hidden countdown current-rate visible-rates hidden-rates])
 
 (s/fdef hidden?
-  :args ::petal
+  :args (s/cat :petal ::petsl)
   :ret boolean?)
 (defn hidden?
   [[hidden]]
   hidden)
 
 (s/fdef visible?
-  :args ::petal
+  :args (s/cat :petal ::petal)
   :ret boolean?)
 (def visible?
   (complement #'hidden?))
 
 (s/fdef countdown
-  :args ::petal
+  :args (s/cat :petal ::petal)
   :ret ::countdown)
 (defn countdown [[_ countdown]]
   countdown)
 
 (s/fdef current-rate
-  :args ::petal
+  :args (s/cat :petal ::petal)
   :ret ::rate)
 (defn current-rate [[_ _ current-rate]]
   current-rate)
 
 (s/fdef visible-rates
-  :args ::petal
+  :args (s/cat :petal ::petal)
   :ret ::rates)
 (defn visible-rates [[_ _ _ visible-rates]]
   visible-rates)
 
 (s/fdef hidden-rates
-  :args ::petal
+  :args (s/cat :petal ::petal)
   :ret ::rates)
 (defn hidden-rates [[_ _ _ _ hidden-rates]]
   hidden-rates)
 
 (s/fdef advance
-  :args ::petal
+  :args (s/cat :petal ::petal)
   :ret ::petal)
 (defn advance
   "Advance a petal with the passage of time.
