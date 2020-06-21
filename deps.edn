@@ -7,14 +7,14 @@
   :runner
   {:extra-deps {com.cognitect/test-runner
                 {:git/url "https://github.com/cognitect-labs/test-runner.git"
-                 :sha "209b64504cb3bd3b99ecfec7937b358a879f55c1"}}
+                 :sha "f7ef16dc3b8332b0d77bc0274578ad5270fbfedd"}}
    :main-opts ["-m" "cognitect.test-runner"
                "-d" "test"]}
 
   :dev
   {:extra-paths ["dev" "test"]}
 
-  :lint {:extra-deps {clj-kondo {:mvn/version "2020.06.12"}}
+  :lint {:extra-deps {clj-kondo {:mvn/version "2020.06.21"}}
          :main-opts ["-m" "clj-kondo.main"]}
 
   :idiom-check {:extra-deps {tvaughan/kibit-runner {:mvn/version "1.0.1"}}
