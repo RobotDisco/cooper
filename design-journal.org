@@ -1,0 +1,65 @@
+#+TITLE: Cooper Memorial Project, design journal
+#+AUTHOR: Gaelan D'costa
+#+EMAIL: gdcosta@gmail.com
+#+LANGUAGE: en
+#+STARTUP: indent align hidestars oddeven
+#+PROPERTY: tangle cooper game designjournal
+
+* Introduction
+** I had a cat.
+   I moved to Toronto in 2011. It wasn't something I decided on myself; my 
+   partner at the time was intending on going to University here.
+
+   Very soon after moving here, possibly in the first or second month, certainly
+   not long enough for me to have been working for more than a paycheque or two,
+   my partner at the time decided to "adopt" a stray cat that had apparently
+   lived in our neighbourhood for a while. He had been living off discarded food
+   from a nearby taxicab parking area and slept in a small shelter a neighbour
+   had set up (he had cats of his own and could not safely bring this cat in.)
+
+   At this time I was the only one of our household who was employed, and this
+   went against my fiscally paranoid sensibilities. But I couldn't argue against
+   rescuing an outdoor cat who showed no hostility to me, so we scooped him up
+   and made him ours. We named him *Special Agent Dale Cooperr* after our
+   favourite TV Show at the time.
+
+   In time my partner and I were no longer together, but it made more sense for
+   me to keep Cooper. Not that I minded; I had learned how to care for him and I
+   very much needed his companionship. He was the first opportunity for me to
+   provide for someone with full awarenesss and understanding, which was very
+   important to me as someone who was not taught how to do so as a child and was
+   conditioned, both as aa software developer and as a North American male, to
+   have considered myself intrinsically incapable of doing so until I was forced
+   to do so on my own.
+
+   We shared much time together, mostly in health but for a few years at the end
+   in a sicknesss from which he finally succumbed to by March 2020. In a final
+   gift to me, he in some ways strengthened me for the upcoming pandemic and
+   environmental and social strife we would face in this year of pandemic and
+   reckoning of a deel social history of racial inequity: it was easy to move
+   through displacement of lockdown and employment fears after two years of
+   diagnosing, treating, and finally burying my feline child.
+
+   I had a particular cat from 2011 until 2020; and while I am at peace with his
+   ended time, I am still adjusting to it, and trying to find some way in which
+   to manifest it. I am hopinng to do so while developing a small game project
+   with him in mind.
+** I played a game
+   One of the earliest things I remember doing as a child after moving to Canada
+   was gathering around my cousin's computer, popping in one of the random
+   scattered shareware compendiums some parent in our extended family had gotten
+   for us, and playing one of the many games that piqued my interest.
+
+   One game I clocked a lot of time in was called [[https://en.wikipedia.org/wiki/Toppler][Perestroika]]. It was a very
+   strange game. It opened with a picture of a recently-collapsed Soviet
+   iconography I barely comprehended from CNN footage. The language was all
+   using characters that made no sense to my latin-exclusive education.
+
+   But the game was ultimately a simple platformer, and the few sprites included
+   were very cute. Much later I would learn that there was s deliberate
+   political statement driving the game, and the idea of a polemic arcade game
+   would endear it to mme further as an adult.
+** Synthesis and mission
+   I want to write something that commemorates some expression of loss for my
+   first cat. Why not try to theme an implementation of a childhood game I very
+   much enjoyed?
