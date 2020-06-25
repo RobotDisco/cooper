@@ -63,3 +63,27 @@
    I want to write something that commemorates some expression of loss for my
    first cat. Why not try to theme an implementation of a childhood game I very
    much enjoyed?
+* The Source Material
+** What are Perestroika's rules?
+From wikipedia:
+#+BEGIN_QUOTE
+The game consists of controlling a small frog-like creature which jumps from one
+lily pad to another, trying to collect dots in four colours symbolizing grocery
+goods, currency transactions, progressive taxes and adventures and to reach a
+certain pad in the right-top corner of the screen. The lilies, symbolizing the
+ever-changing laws and acts in the USSR, constantly shrink and disappear only to
+appear in other places. Higher levels also feature one or more evil creatures
+called "bureaucrats" which follow the frog and try to eat it. The frog dies if
+the lily pad on which it is standing disappears, if the player moves it to a
+place where there is no lily pad, or if it is caught by a bureaucrat.
+#+END_QUOTE
+** Intended cooperification
++ The protagonist will represent Cooper
++ Unsure as yet what the petals will become.
++ The coin at the end will become Fried Chicken, the food he most tried to steal
++ The "bureaucraats" will either represent me or my other cat as obstacles
++ I am yet unsure what the other point items will represent.
+* Implementation
+
+
+
