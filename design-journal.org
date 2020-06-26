@@ -83,7 +83,63 @@ place where there is no lily pad, or if it is caught by a bureaucrat.
 + The coin at the end will become Fried Chicken, the food he most tried to steal
 + The "bureaucraats" will either represent me or my other cat as obstacles
 + I am yet unsure what the other point items will represent.
-* Implementation
+** Reference Implementation
+I found a [[http://michal.biniek.pl/games/toppler.html][Javascript implementation]] I can look at for guidance.
+* Earlier Attempts
+** Lisp Game Jam
+Originally I was going to do this for a Lisp game jam. The week of the jam, my
+work downsized because of COVID. I was not impacted but I spent much of the week
+trying to deal with the fallout and make sure the people who were were ok. By
+the time I got around to noticing the Lisp game jam had started, I had only two
+days left.
 
+I originally rushed an attempt by beginning from the user interface. I spent the
+weekend learning how to render a 2D environment via the [[https://github.com/oakes/play-cljc][play-cljc]] project.
 
+It was gratifying to see shapes render on the screen in a weekend, but over the
+next few weeks I wrote myself into a corner as I could not untangle my game
+logic from the rendering code. In addition, I was trying to learn WebGL concepts
+while also trying to piece together game logic at the same time.
 
+At some point I had to give up because I simply could not figure out how to work
+on one component without impacting or breaking other components, and the flow of
+the program was incredibly difficult to navigate. 
+
+In addition, the =play-cljc= author's template assumed an incredibly different
+workflow from mine, which meant I was constantly stopping and starting the
+program and I could not debug it from inside the editor. I was gaining none of
+the advantages of using clojure.
+
+The last commit of this particular attempt can be found [[https://github.com/RobotDisco/cooper/tree/7b79cba8edb6051abf8934549f0f79c5b7c514b0][here]]
+** Rip it up and Start Again
+I then recreated the projet from scratch after doing some small courses on data
+modelling and using the Clojure REPL. This has proven to be a much nicer
+environmment. I am indebted to [[https://purelyfunctional.tv][Eric Normand]] for producing some very useful
+courses on these subjects.
+
+I am trying to do most of my prototyping in the REPL, convering experiments into
+tests. I was able to generate petal logic and a small amount of player logic
+doing so, with test-driven development keeping my understanding of the logic
+matching what the code actually implemented.
+
+After I was comfortable with my design and tests, I would use =clojure.spec= to
+add type-checking to the data and functions. I was aware this was puting the
+cart before the horse but I was still learning about this technique and a lot of
+the promised paradigm shifting took a bunch of time for me to absorb. I am now
+starting to realize it would be nice if I had designed my functions and data
+such that my tests and data could be tested by property-based testing instead of
+via me constructing specific examples, although that method is still very
+strange to me.
+
+I also started learning enough about =deps.edn= to produce a nice workflow for
+myself, using aliases and plugins to allow for linting and idiom-checking, for
+automated testing, and for dependency management. I am indebted to the
+[[https://practicalli.github.io/clojure/][practicalli clojure guide]] and their curated [[https://github.com/practicalli/clojure-deps-edn][deps.edn alias set]] for finally
+showing me how to produce a good starting place for developing clojure
+applications.
+
+This was when I learned about the idea of a design journal, where one keeps
+around one's REPL explorations as a way of recording how one developed the shape
+of their program instead of removing them when done. I wish I had preserved my
+earlier explorations for petal and player logic but I will have to recreate
+them.
