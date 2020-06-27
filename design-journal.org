@@ -271,6 +271,11 @@ OK sweet let's just implement the rest of the function
   (def invisible-petal-pending {:type :hidden :countdown 100})
   (def invisible-petal-triggers {:type :hidden :countdown 0})
 
+  ;; I have split this into a multi-method because the way that `visible` and
+  ;; `hidden` petals work are very different, but I want to use them in the
+  ;; same places, and I don't want to break Liskov. Also this allows me to
+  ;; have two completely separate structures without needing to have two
+  ;; layers of branching in the `advance` function.
   (defmulti advance-petal
       "Progress the petal forward in time.
 
