@@ -1,21 +1,3 @@
 {:paths ["src"]
- :deps {org.clojure/clojure {:mvn/version "1.10.1"}}
- :aliases
- {:test {:extra-paths ["test"]
-         :extra-deps {orchestra {:mvn/version "2019.02.06-1"}}}
-
-  :runner
-  {:extra-deps {com.cognitect/test-runner
-                {:git/url "https://github.com/cognitect-labs/test-runner.git"
-                 :sha "f7ef16dc3b8332b0d77bc0274578ad5270fbfedd"}}
-   :main-opts ["-m" "cognitect.test-runner"
-               "-d" "test"]}
-
-  :dev
-  {:extra-paths ["dev" "test"]}
-
-  :lint {:extra-deps {clj-kondo {:mvn/version "2020.06.21"}}
-         :main-opts ["-m" "clj-kondo.main"]}
-
-  :idiom-check {:extra-deps {tvaughan/kibit-runner {:mvn/version "1.0.1"}}
-                :main-opts ["-m" "kibit-runner.cmdline"]}}}
+ :deps {org.clojure/clojure {:mvn/version "1.10.1"}
+        org.clojure/test.check {:mvn/version "1.0.0"}}}

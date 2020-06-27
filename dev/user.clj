@@ -1,14 +1,28 @@
 (ns user
-  (:require [net.robot-disco.cooper.core]))
+  (:require [clojure.java.io :as io]
+            [clojure.pprint :refer [pprint]]
+            [clojure.reflect :refer [reflect]]
+            [clojure.repl :refer [apropos dir doc find-doc pst source]]
+            [clojure.spec.alpha :as s]
+            [clojure.test :refer [run-all-tests instrument]]))
 
-(defn dev []
-  (println "Starting dev REPL mode")
-  (require 'dev)
-  (in-ns 'dev))
+(defmacro print-and-run
+  "Print forms before we execute them."
+  [& forms]
+  (cons 'do (map (fn [form]
+                   `(do (pprint '~form)
+                        ~form)) forms)))
 
-(println "Welcome to the cooper project REPL")
+(defn test-all []
+  (run-all-tests #"cooper.*test$"))
+
+(println "Welcome to the cooper project development REPL!")
 (println)
-(println "Run: (dev) to start development mode.")
+
+(print-and-run
+ (set! *print-length* 20))
+
+
 
 
 

@@ -143,3 +143,113 @@ around one's REPL explorations as a way of recording how one developed the shape
 of their program instead of removing them when done. I wish I had preserved my
 earlier explorations for petal and player logic but I will have to recreate
 them.
+* Petal models
+** 2020-06-26
+Starting with the petals. They're somewhat bimodal, they have two states effectively
++ hidden with a countdown to respawning
++ visible with a randomly selected rate
+
+The petals so far have just one function, a advance. Here are its rules
++ if visible, shrink the petal by its shrinking rate
++ if visible but size <= 0, flip to visible and start randomly picked countdown length
++ if invisible, tick the countdown by one
++ if invisible but countdown = 0, flip to visible with a randomly selected shrinking rate
+
+I should probably play around with some ideas now. Here are mock visible petal
+which may or may not be complete.
+#+BEGIN_SRC clojure :results silent
+  ;; A petal can be visible, with a size that shrinks according to a rate
+  (def visible-petal-mock {:size 100 :rate 10})
+  ;; or a petal can be invisible, with a countdown until it becomes visible again
+  (def invisible-petal-mock {:countdown 100})
+#+END_SRC
+
+Let's write a stub version of the advance-petal function.
+#+BEGIN_SRC clojure :results silent
+  (defn advance-petal
+    "Progress the petal forward in time.
+
+    If visible, shrink the petal by its shrinking rate. If invisibble, tick the countdown timer by one.
+    If the relevan visible/hidden petals values reach a zero value or lower (size/countdown respectively) then flip them into the alternating state with randomized new starting conditions.
+
+    Arguments:
+    - petal to advance
+    Return:
+    - petal having moved forward in time, including flipping state."
+    [petal]
+    petal)
+#+END_SRC
+
+Let's write some characterization tests using our mocks.
+#+BEGIN_SRC clojure :results silent
+  (require '[clojure.test :refer [deftest is testing]])
+
+  (def visible-petal-full {:size 100 :rate 10})
+  (def visible-petal-empty {:size 0 :rate 10})
+
+  (deftest visible-petal-test
+    (testing "Full petal shrinks"
+      (let [shrunk-petal (advance-petal visible-petal-full)]
+        (is (< (:size shrunk-petal) (:size visible-petal-full)))
+        (is (= (+ (:size shrunk-petal) (:rate shrunk-petal)) (:size visible-petal-full))))))
+
+  (visible-petal-test)
+#+END_SRC
+
+OK Let's try implementing that test in the function.
+#+BEGIN_SRC clojure :results silent
+  (defn advance-petal
+    "Progress the petal forward in time.
+
+    If visible, shrink the petal by its shrinking rate. If invisibble, tick the countdown timer by one.
+    If the relevan visible/hidden petals values reach a zero value or lower (size/countdown respectively) then flip them into the alternating state with randomized new starting conditions.
+
+    Arguments:
+    - petal to advance
+    Return:
+    - petal having moved forward in time, including flipping state."
+    [{:keys [size rate] :as petal}]
+    (assoc petal :size (- size rate)))
+#+END_SRC
+** 2020-06-27
+OK sweet let's implement all our tests now
+#+BEGIN_SRC clojure :results silent
+  (require '[clojure.test :refer [deftest is testing]])
+
+  (def visible-petal-full {:size 100 :rate 10})
+  (def visible-petal-empty {:size 0 :rate 10})
+
+  (def invisible-petal-mock {:countdown 100})
+
+    (deftest visible-petal-test
+      (testing "Full petal shrinks"
+        (let [shrunk-petal (advance-petal visible-petal-full)]
+          (is (< (:size shrunk-petal) (:size visible-petal-full)))
+          (is (= (+ (:size shrunk-petal) (:rate shrunk-petal)) (:size visible-petal-full)))))
+      (testing "Empty petal flips"
+        (let [flipped-petal (advance-petal visible-petal-empty)]
+          (is (= (set (keys flipped-petal)) (set (keys invisible-petal-mock)))))))
+#+END_SRC
+OK new function definition
+#+BEGIN_SRC clojure :results silent
+    (defn advance-petal
+      "Progress the petal forward in time.
+
+      If visible, shrink the petal by its shrinking rate. If invisibble, tick the countdown timer by one.
+      If the relevan visible/hidden petals values reach a zero value or lower (size/countdown respectively) then flip them into the alternating state with randomized new starting conditions.
+
+      Arguments:
+      - petal to advance
+      Return:
+      - petal having moved forward in time, including flipping state."
+      [{:keys [size rate] :as petal}]
+      (if (zero? size)
+        {:countdown 100}
+        (assoc petal :size (- size rate))))
+#+END_SRC
+
+
+
+
+
+
