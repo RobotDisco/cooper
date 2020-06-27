@@ -145,15 +145,18 @@ earlier explorations for petal and player logic but I will have to recreate
 them.
 * Petal models
 ** 2020-06-26
-Starting with the petals. They're somewhat bimodal, they have two states effectively
+Starting with the petals. They're somewhat bimodal, they have two states
+effectively
 + hidden with a countdown to respawning
 + visible with a randomly selected rate
 
 The petals so far have just one function, a advance. Here are its rules
 + if visible, shrink the petal by its shrinking rate
-+ if visible but size <= 0, flip to visible and start randomly picked countdown length
++ if visible but size <= 0, flip to visible and start randomly picked countdown
+  length
 + if invisible, tick the countdown by one
-+ if invisible but countdown = 0, flip to visible with a randomly selected shrinking rate
++ if invisible but countdown = 0, flip to visible with a randomly selected
+  shrinking rate
 
 I should probably play around with some ideas now. Here are mock visible petal
 which may or may not be complete.
@@ -169,8 +172,10 @@ Let's write a stub version of the advance-petal function.
   (defn advance-petal
     "Progress the petal forward in time.
 
-    If visible, shrink the petal by its shrinking rate. If invisibble, tick the countdown timer by one.
-    If the relevan visible/hidden petals values reach a zero value or lower (size/countdown respectively) then flip them into the alternating state with randomized new starting conditions.
+    If visible, shrink the petal by its shrinking rate. If invisible, tick the
+    countdown timer by one.  If the relevan visible/hidden petals values reach a
+    zero value or lower (size/countdown respectively) then flip them into the
+    alternating state with randomized new starting conditions.
 
     Arguments:
     - petal to advance
@@ -191,7 +196,8 @@ Let's write some characterization tests using our mocks.
     (testing "Full petal shrinks"
       (let [shrunk-petal (advance-petal visible-petal-full)]
         (is (< (:size shrunk-petal) (:size visible-petal-full)))
-        (is (= (+ (:size shrunk-petal) (:rate shrunk-petal)) (:size visible-petal-full))))))
+        (is (= (+ (:size shrunk-petal) (:rate shrunk-petal))
+               (:size visible-petal-full))))))
 
   (visible-petal-test)
 #+END_SRC
@@ -201,8 +207,10 @@ OK Let's try implementing that test in the function.
   (defn advance-petal
     "Progress the petal forward in time.
 
-    If visible, shrink the petal by its shrinking rate. If invisibble, tick the countdown timer by one.
-    If the relevan visible/hidden petals values reach a zero value or lower (size/countdown respectively) then flip them into the alternating state with randomized new starting conditions.
+    If visible, shrink the petal by its shrinking rate. If invisible, tick the
+    countdown timer by one.  If the relevan visible/hidden petals values reach a
+    zero value or lower (size/countdown respectively) then flip them into the
+    alternating state with randomized new starting conditions.
 
     Arguments:
     - petal to advance
@@ -212,6 +220,7 @@ OK Let's try implementing that test in the function.
     (assoc petal :size (- size rate)))
 #+END_SRC
 ** 2020-06-27
+*** Unit testing petals
 OK sweet let's implement all our tests now
 #+BEGIN_SRC clojure :results silent
   (require '[clojure.test :refer [deftest is testing]])
@@ -225,28 +234,115 @@ OK sweet let's implement all our tests now
       (testing "Full petal shrinks"
         (let [shrunk-petal (advance-petal visible-petal-full)]
           (is (< (:size shrunk-petal) (:size visible-petal-full)))
-          (is (= (+ (:size shrunk-petal) (:rate shrunk-petal)) (:size visible-petal-full)))))
+          (is (= (+ (:size shrunk-petal) (:rate shrunk-petal))
+                 (:size visible-petal-full)))))
       (testing "Empty petal flips"
         (let [flipped-petal (advance-petal visible-petal-empty)]
-          (is (= (set (keys flipped-petal)) (set (keys invisible-petal-mock)))))))
+          (is (= (set (keys flipped-petal))
+                 (set (keys invisible-petal-mock)))))))
 #+END_SRC
 OK new function definition
 #+BEGIN_SRC clojure :results silent
-    (defn advance-petal
+  (defn advance-petal
+    "Progress the petal forward in time.
+
+    If visible, shrink the petal by its shrinking rate. If invisible,
+    tick the countdown timer by one.  If the relevan visible/hidden
+    petals values reach a zero value or lower (size/countdown
+    respectively) then flip them into the alternating state with
+    randomized new starting conditions.
+
+    Arguments:
+    - petal to advance
+    Return:
+    - petal having moved forward in time, including flipping state."
+    [{:keys [size rate] :as petal}]
+    (if (zero? size)
+      {:countdown 100}
+      (assoc petal :size (- size rate))))
+#+END_SRC
+OK sweet let's just implement the rest of the function
+#+BEGIN_SRC clojure :results silent
+  (require '[clojure.test :refer [deftest is testing]])
+
+  (def visible-petal-full {:type :visible :size 100 :rate 10})
+  (def visible-petal-empty {:type :visible :size 0 :rate 10})
+
+  (def invisible-petal-pending {:type :hidden :countdown 100})
+  (def invisible-petal-triggers {:type :hidden :countdown 0})
+
+  (defmulti advance-petal
       "Progress the petal forward in time.
 
-      If visible, shrink the petal by its shrinking rate. If invisibble, tick the countdown timer by one.
-      If the relevan visible/hidden petals values reach a zero value or lower (size/countdown respectively) then flip them into the alternating state with randomized new starting conditions.
+      If visible, shrink the petal by its shrinking rate. If invisible,
+    tick the countdown timer by one.  If the relevan visible/hidden
+    petals values reach a zero value or lower (size/countdown
+    respectively) then flip them into the alternating state with
+    randomized new starting conditions.
 
       Arguments:
       - petal to advance
       Return:
       - petal having moved forward in time, including flipping state."
-      [{:keys [size rate] :as petal}]
-      (if (zero? size)
-        {:countdown 100}
-        (assoc petal :size (- size rate))))
+    :type)
+
+  (defmethod advance-petal :hidden
+    [{:keys [countdown] :as petal}]
+    (if (zero? countdown)
+      {:type :visible :size 100 :rate 10}
+      (assoc petal :countdown (dec countdown))))
+
+  (defmethod advance-petal :visible
+    [{:keys [size rate] :as petal}]
+    (if (zero? size)
+      {:type :hidden :countdown 100}
+      (assoc petal :size (- size rate))))
+
+  (deftest visible-petal-test
+    (testing "Full petal shrinks"
+      (let [shrunk-petal (advance-petal visible-petal-full)]
+        (is (< (:size shrunk-petal) (:size visible-petal-full)))
+        (is (= (+ (:size shrunk-petal) (:rate shrunk-petal))
+               (:size visible-petal-full)))))
+    (testing "Empty petal flips"
+      (let [flipped-petal (advance-petal visible-petal-empty)]
+        (is (= (set (keys flipped-petal))
+               (set (keys invisible-petal-pending)))))))
+
+  (deftest invisible-petal-test
+    (testing "Pending respawn counts down"
+      (let [pending-respawn (advance-petal invisible-petal-pending)]
+        (is (= (inc (:countdown pending-respawn))
+               (:countdown invisible-petal-pending)))))
+    (testing "Hidden petal respawns when countdown finished"
+      (let [flipped-petal (advance-petal invisible-petal-triggers)]
+        (is (= (set (keys flipped-petal))
+               (set (keys visible-petal-full)))))))
 #+END_SRC
+Excellent so that worked. I think it's time to get this specc'd
+*** A momentary question and deferral of random petal generation.
+It seemed super important to me that I write some functionality for random
+generation of rates and countdown values. It made things weird, always, but
+right now my petals with their fixed respawn and shrink rates seems pretty
+contrived. Shouldn't this be considered essential MVP complexity?
+
+I am starting to think it shouldn't be. While I can make the respawn randomness
+parameterizable, from a /feedback/ point of view it also makes it harder for me
+to understand what is going on as I try to reason about the currently
+implemented "world" of my game. I think I'm going to have to added it in as one
+of the earliest -- if not *the* earliest -- release milestones, but I can
+implement it later and right now that randomness only complicates my code and
+makes it harder for me to test future things. Let's leave the game running as
+statically as possible as I implement the player, game map, point system, and so
+on. We'll add randomness in when I have more comfort in the overall stability of
+the system.
+*** Let's spec this sucker
+A major part of switching to Clojure is that I can use spec to produce runtime
+-- and optional! -- static checking and property-based assertion of my code at
+the fuction/data definition layer.  Now that I have my unit tests, which are in
+fact characterization tests, let's add some typing to the model and also see if
+I can produce generative/property-based tests that leverage this!
+
 
 
 
