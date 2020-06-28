@@ -342,11 +342,393 @@ statically as possible as I implement the player, game map, point system, and so
 on. We'll add randomness in when I have more comfort in the overall stability of
 the system.
 *** Let's spec this sucker
-A major part of switching to Clojure is that I can use spec to produce runtime
--- and optional! -- static checking and property-based assertion of my code at
-the fuction/data definition layer.  Now that I have my unit tests, which are in
-fact characterization tests, let's add some typing to the model and also see if
-I can produce generative/property-based tests that leverage this!
+A major part of switching to Clojure is that I can use [[https://clojure.org/guides/spec][clojure.spec]] to
+produce runtime -- and optional! -- static checking and property-based
+assertion of my code at the fuction/data definition layer.  Now that I
+have my unit tests, which are in fact characterization tests, let's
+add some typing to the model and also see if I can produce
+generative/property-based tests that leverage this!
+
+I'm not going to try to rehash what spec is or how it works, I think
+the above document and [[https://www.youtube.com/playlist?list=PLpr9V-R8ZxiBWGAuncfBRYhZtY5-Bp75s][practicalli's video series]] does a great job, so
+check those out!
+#+BEGIN_SRC clojure :results silent
+  (require '[clojure.test :refer [deftest is testing]])
+  (require '[clojure.spec.alpha :as s])
+
+  ;; Interesting, :: keywords don't work here for some reason. The
+  ;; namespacing?  Leverage fact that sets are implicitly membership
+  ;; predicates when invoked.
+  (s/def :petal/type #{:petal/hidden :petal/visible})
+  (s/def :petal/size (s/and int? #(>= % 0) #(<= % 100)))
+  ;; spec generators don't like it when the first predicate doesn't
+  ;; explicitly indicate a type, which is why just using pos? wasn't
+  ;; enough.
+  (s/def :petal/rate (s/and int? pos?))
+  (s/def :petal/countdown (s/and int? #(>= % 0)))
+
+  ;; Little bit of a dance here to do polymorphic specs based on field
+  (defmulti petal-type :petal/type)
+  (defmethod petal-type :petal/hidden [_]
+    (s/keys :req [:petal/type :petal/countdown]))
+  (defmethod petal-type :petal/visible [_]
+    (s/keys :req [:petal/type :petal/size :petal/rate]))
+  (s/def :petal/petal (s/multi-spec petal-type :petal/type))
+
+  (def visible-petal-full
+    {:petal/type :petal/visible :petal/size 100 :petal/rate 10})
+  ;; Nifty way to shorthand namespaced keywords. Note it doesn't work
+  ;; for values.
+  (def visible-petal-empty
+    #:petal{:type :petal/visible :size 0 :rate 10})
+
+  (def invisible-petal-pending
+    #:petal{:type :petal/hidden :countdown 100})
+  (def invisible-petal-triggers
+    #:petal{:type :petal/hidden :countdown 0})
+
+  ;; I have split this into a multi-method because the way that
+  ;; `visible` and `hidden` petals work are very different, but I want
+  ;; to use them in the same places, and I don't want to break
+  ;; Liskov. Also this allows me to have two completely separate
+  ;; structures without needing to have two layers of branching in the
+  ;; `advance` function.
+  (defmulti advance-petal
+    "Progress the petal forward in time.
+
+    If visible, shrink the petal by its shrinking rate. If invisible, tick the
+    countdown timer by one.  If the relevan visible/hidden petals values reach a
+    zero value or lower (size/countdown respectively) then flip them into the
+    alternating state with randomized new starting conditions.
+
+    Arguments:
+    - petal to advance
+    Return:
+    - petal having moved forward in time, including flipping state."
+    :petal/type)
+
+  ;; Happily, destructuring can handle namespaced keywords
+  (defmethod advance-petal :petal/hidden
+    [{:keys [petal/countdown] :as petal}]
+    (if (zero? countdown)
+      #:petal{:type :petal/visible :size 100 :rate 10}
+      (assoc petal :petal/countdown (dec countdown))))
+
+  (defmethod advance-petal :petal/visible
+    [{:keys [petal/size petal/rate] :as petal}]
+    (if (zero? size)
+      #:petal{:type :petal/hidden :countdown 100}
+      (assoc petal :petal/size (- size rate))))
+
+  (deftest visible-petal-test
+    (testing "Full petal shrinks"
+      (let [shrunk-petal (advance-petal visible-petal-full)]
+        (is (< (:petal/size shrunk-petal)
+               (:petal/size visible-petal-full)))
+        (is (= (+ (:petal/size shrunk-petal) (:petal/rate shrunk-petal))
+               (:petal/size visible-petal-full)))))
+    (testing "Empty petal flips"
+      (let [flipped-petal (advance-petal visible-petal-empty)]
+        (is (= (set (keys flipped-petal))
+               (set (keys invisible-petal-pending)))))))
+
+  (deftest invisible-petal-test
+    (testing "Pending respawn counts down"
+      (let [pending-respawn (advance-petal invisible-petal-pending)]
+        (is (= (inc (:petal/countdown pending-respawn))
+               (:petal/countdown invisible-petal-pending)))))
+    (testing "Hidden petal respawns when countdown finished"
+      (let [flipped-petal (advance-petal invisible-petal-triggers)]
+        (is (= (set (keys flipped-petal))
+               (set (keys visible-petal-full)))))))
+#+END_SRC
+
+So right now I've written up clojure.spec definitions of the /data./ I
+can create structures as maps or evaluate the results of functions and
+verify that they conform to the shape of data as I have defined it.
+
+#+BEGIN_SRC clojure :results silent
+  ;; Without this, spec asserts won't fire.
+  ;; This is useful when limiting spec assert checks to dev mode
+  ;; (s/check-asserts true)
+
+  ;; The following asserts will all pass.
+
+  ;; If conforming, print the item. If invalid, there is a special keyword
+  ;; called #:clojure.spec.alpha/invalid that is returned.
+  (s/conform :petal/petal
+             #:petal{:type :petal/visible :size 100 :rate 10})
+  ;; If conforming, print nothing. If not, spit out a message to the
+  ;; REPL that breaks down exactly which portion of the item does not
+  ;; conform to the provided spec.
+  (s/explain :petal/petal
+             #:petal{:type :petal/visible :size 100 :rate 10})
+  ;; Just print out a true if the object conforms, otherwise false.
+  (s/valid? :petal/petal
+            #:petal{:type :petal/visible :size 100 :rate 10})
+  ;; Instead of failing with message or special keyword, throw an
+  ;; assert. Note that the call always returns the object, which is good
+  ;; for bypassing the assert in production code, when the
+  ;; aforementioned `s/check-asserts` param has not been set trrue as to
+  ;; activate the assertion checking.
+  (s/assert :petal/petal
+            #:petal{:type :petal/visible :size 100 :rate 10})
+
+  ;; These checks will all fail in respectively similar ways.
+
+  (s/conform :petal/petal
+             #:petal{:type :petal/visible :size 1000 :rate 10})
+  (s/explain :petal/petal
+             #:petal{:type :petal/visible :size 1000 :rate 10})
+  (s/valid? :petal/petal
+            #:petal{:type :petal/visible :size 1000 :rate 10})
+  (s/assert :petal/petal
+            #:petal{:type :petal/visible :size 1000 :rate 10})
+#+END_SRC
+
+Check out how I can generate random examples of my data now thanks to
+having type and constraint definitions!
+#+BEGIN_SRC clojure :results silent
+  ;; Note that this module secrently requires test.check to be installed
+  ;; via deps.edn
+  (require '[clojure.spec.gen.alpha :as gen])
+
+  ;; generate some random int
+  (gen/generate (s/gen int?))
+
+  ;; generate a random value from my set of petal tyles
+  (gen/generate (s/gen :petal/type))
+
+  ;; I can generate full petals now too! This is a good way to see the
+  ;; domain of inputs I defined and verify via random generation whether
+  ;; I'm truly happy with my definition; for example right now I notice
+  ;; that while I capped my petal size to 100, the rate (of shrinkage
+  ;; per turn) is basically unlimited which will cause typing problems
+  ;; not to mention gameplay ones without further refining.
+  (gen/generate (s/gen :petal/petal))
+
+  ;; `gen/sample` allows you to generate larger amounts of example items
+  ;; from your specs.
+  (gen/sample (s/gen :petal/petal) 5)
+
+  ;; `spec/exercise` prints both generated output and their conformance
+  ;; breakdown. This is useful with things with more advanced
+  ;; conformance breakdowns like `s/cat`, `s/alt`, `s/*` etc...
+  (s/exercise :petal/petal 2)
+#+END_SRC
+There is a way to write custom generators if necessary but I haven't
+learned how to yet.
+*** function definition specs + function instrumentation
+I'm growing tired of copying my content out over and over, but I think
+I need to do so at least once more. So what I've done so far is allow
+for specifications of data. This is stuff we can throw into functions
+when we want to validate or assert the appropriate shape of
+user-provided data, and I could try to integrate these into my unit
+tests and function pre/post-condition maps. But spec allows us to go
+further; we can define specs for functions and and macros.
+
+The forms we use will allow us to make spec declarations on the
+following:
++ The argument list
++ The return type
++ An invariant assertion relating the arguments to the return if
+  necessary.
+
+That last one is the most interesting because it is how we will enact
+property-based testing on our system via `test.check`. It turns out
+that we can use these data shapes to generate random conforming
+values, which if we run them through our tests, means that we can run
+all sorts of random conforming inputs in our test classes and verify
+that our truths hold. This is slower and more abstract than
+example-based unit tests, but we are far more likely to pick up edge
+cases.
+
+So I'm going to recopy the above code fragment, add the function
+specs, and add some generative tests. At that point I think we've
+added enough to then move this all into real code.
+
+#+BEGIN_SRC clojure :results silent
+  (require '[clojure.test :refer [deftest is testing]])
+  (require '[clojure.spec.alpha :as s])
+  (require '[clojure.spec.test.alpha :as st])
+
+  (s/def :petal/type #{:petal/hidden :petal/visible})
+  (s/def :petal/size (s/and int? #(>= % 0) #(<= % 100)))
+  ;; spec generators don't like it when the first predicate doesn't
+  ;; explicitly indicate a type, which is why just using pos? wasn't
+  ;; enough.
+  (s/def :petal/rate (s/and int? pos?))
+  (s/def :petal/countdown (s/and int? #(>= % 0)))
+
+  (defmulti petal-type :petal/type)
+  (defmethod petal-type :petal/hidden [_]
+    (s/keys :req [:petal/type :petal/countdown]))
+  (defmethod petal-type :petal/visible [_]
+    (s/keys :req [:petal/type :petal/size :petal/rate]))
+
+  (s/def :petal/petal (s/multi-spec petal-type :petal/type))
+  (s/def :petal/petal-hidden (s/and :petal/petal #(= (:petal/type %) :petal/hidden)))
+  (s/def :petal/petal-visible (s/and :petal/petal #(= (:petal/type %) :petal/visible)))
+
+  (def visible-petal-full
+    {:petal/type :petal/visible :petal/size 100 :petal/rate 10})
+  (def visible-petal-empty
+    #:petal{:type :petal/visible :size 0 :rate 10})
+
+  (def invisible-petal-pending
+    #:petal{:type :petal/hidden :countdown 100})
+  (def invisible-petal-triggers
+    #:petal{:type :petal/hidden :countdown 0})
+
+  ;; Because function arg-lists are positional people often used a
+  ;; regex-like method for writing specs for them, which I won't get
+  ;; into, spec resources I've previously linked to should explain them
+  ;; clearly.
+  (s/fdef advance-petal-visible
+    :args (s/cat :petal :petal/petal-visible)
+    :ret :petal/petal
+    ;; This complex bit just verifies the return type based on the input
+    ;; petal that was provided.  Right now it often feels like I'm just
+    ;; reimplementing the solution but I can see how there's a bit of a
+    ;; shift from solution to verification here.
+    ;;
+    ;; This also highlights why the designs of spec don't enable it by default.
+    :fn #(if (zero? (get-in (:args %) [:petal :petal/size]))
+          (= (:petal/type (:ret %)) :petal/hidden)
+          (= (:petal/type (:ret %)) :petal/visible)))
+
+  (s/fdef advance-petal-hidden
+    :args (s/cat :petal :petal/petal-hidden)
+    :ret :petal/petal
+    :fn #(if (zero? (get-in (:args %) [:petal :petal/countdown]))
+           (= (:petal/type (:ret %)) :petal/visible)
+           (= (:petal/type (:ret %)) :petal/hidden)))
+
+  ;; Notice how I defined my spec defs (via `fdef`) not against the
+  ;; multimethod definitions but against two new functions. This seems
+  ;; to be a limitation in how spec works, possibly because multimethods
+  ;; are sort of kludgy things that appear to be more java object than
+  ;; whatever clojure uses internally for runctions. This seems to cause
+  ;; issues. It's basically the same split I had before, and the nice
+  ;; thing is that my :fns are "simpler" by virtue of only handling what
+  ;; each implementation requires vs handling them all, but it is kind
+  ;; of annoying.
+  (defmulti advance-petal
+    "Progress the petal forward in time.
+
+    If visible, shrink the petal by its shrinking rate. If invisible,
+    tick the countdown timer by one.  If the relevant visible/hidden
+    petals values reach a zero value or lower (size/countdown
+    respectively) then flip them into the alternating state with
+    randomized new starting conditions.
+
+    Arguments:
+    - petal to advance
+    Return:
+    - petal having moved forward in time, including flipping state."
+    :petal/type)
+
+  (defn advance-petal-hidden
+    [{:keys [petal/countdown] :as petal}]
+    (if (zero? countdown)
+      #:petal{:type :petal/visible :size 100 :rate 10}
+      (assoc petal :petal/countdown (dec countdown))))
+
+  (defmethod advance-petal :petal/hidden
+    [petal]
+    (advance-petal-hidden petal))
+
+  (defn advance-petal-visible
+    [{:keys [petal/size petal/rate] :as petal}]
+    (if (zero? size)
+      #:petal{:type :petal/hidden :countdown 100}
+      ; Note how I added a floor. This was because of an issue
+      ; test.check caught, which we'll get to later.
+      (assoc petal :petal/size (max 0 (- size rate)))))
+
+  (defmethod advance-petal :petal/visible
+    [petal]
+    (advance-petal-visible petal))
+
+  ;; This is how we enable arg checking (for dev and test mode)
+  ;; Note we use the macro quote for some reason.
+  (st/instrument `advance-petal-visible)
+  (st/instrument `advance-petal-hidden)
+  ;; These can be disabled with the following.
+  (st/unstrument `advance-petal-visible)
+  (st/unstrument `advance-petal-hidden)
+
+  (deftest visible-petal-test
+    (testing "Full petal shrinks"
+      (let [shrunk-petal (advance-petal visible-petal-full)]
+        (is (< (:petal/size shrunk-petal)
+               (:petal/size visible-petal-full)))
+        (is (= (+ (:petal/size shrunk-petal) (:petal/rate shrunk-petal))
+               (:petal/size visible-petal-full)))))
+    (testing "Empty petal flips"
+      (let [flipped-petal (advance-petal visible-petal-empty)]
+        (is (= (set (keys flipped-petal))
+               (set (keys invisible-petal-pending)))))))
+
+  (deftest invisible-petal-test
+    (testing "Pending respawn counts down"
+      (let [pending-respawn (advance-petal invisible-petal-pending)]
+        (is (= (inc (:petal/countdown pending-respawn))
+               (:petal/countdown invisible-petal-pending)))))
+    (testing "Hidden petal respawns when countdown finished"
+      (let [flipped-petal (advance-petal invisible-petal-triggers)]
+        (is (= (set (keys flipped-petal))
+               (set (keys visible-petal-full)))))))
+
+  ;; Now let's throw about a thousand randomly generated petals at our
+  ;; functions to make sure they always conform to our specs.
+  (st/check `advance-petal-hidden)
+  ;; Oh look at that throwing random visible petals indicates that my
+  ;; spec doesn't allow for negative sizes but my advance-petal-visible
+  ;; functional happily generates them. So I fixed it!
+  (st/check `advance-petal-visible)
+#+END_SRC
+
+Alright yeah, if you read through the code you'll see I had to make
+some changes both to make spec happy but also my testing _did_ find a
+bug in my advance-petal code for visible petals. So hurrah! Value
+proposition demonstrated!
+
+Note: Every so often the `test/check` calls I make fail because the
+generators for my petals can't generate valid input in 100
+iterations. This seems weird given my code but I'll fix it later.  I
+believe there are ways to guide the spec generators along to make
+their lives easier, and it will be good to keep bashing those
+test.check calls to see if I ever find a failing schema check under
+larger numbers of random iterations.
+*** Success!
+OK! I think I've developed the flow I want out of this for now!
+
+1. Model the necessary data and functions/logic I imagine I'll need,
+   in hammock time (i.e. thinking really hard about the business
+   domain)
+2. Spec my data models to get a sense of their shape and feel
+   comfortable randomly generating examples.
+3. Use TDD to produce characterization tests to get a starting sense
+   of what I want my behaviour to look like. Turn on instrumenting so
+   at least I make sure my arguments are correct.
+4. Write a function spec after using thinking time to figure out the invariants of my function.
+5. Write up generators if needed and add some generative tests and
+   make sure they pass over a large number of randomly generated
+   inputs!
+6. Turn off instrumenting if I don't think I'll be revisiting these functions/data again.
+7. Copy work into project file structure.
+
+It seems like to start doing the design here is a good idea, but
+eventually I can see me accelerating this directly into code. I
+suspect the switch will happen when I stop making distinct design
+decisions, which at the beginning of a code project is all the dang
+time! When I stop playing around with data specs I suspect I'll be in
+a better place to make my journal notes less detailed..
+
+
+
+
 
 
 
