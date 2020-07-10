@@ -725,14 +725,10 @@ suspect the switch will happen when I stop making distinct design
 decisions, which at the beginning of a code project is all the dang
 time! When I stop playing around with data specs I suspect I'll be in
 a better place to make my journal notes less detailed..
+** 2020-07-09
+I tried this on the 28th but I got distracted.
 
+I moved code out of the journal and into source files.
 
-
-
-
-
-
-
-
-
+I also figured out how to write fixtures to instrument/unstrument functions as fixtures, as well as wrap spec checks in the clojure.test framework.
 
