@@ -731,4 +731,7 @@ I tried this on the 28th but I got distracted.
 I moved code out of the journal and into source files.
 
 I also figured out how to write fixtures to instrument/unstrument functions as fixtures, as well as wrap spec checks in the clojure.test framework.
+** 2022-12-26
+Life happened. I got a new cat. My job became involved. I got covid. I got heart failure. I recovered almost none the worse for wear. My job continued to be involved. The pandemic lightened into a kind of normal life again. I made a shrine for Cooper recently. I started therapy for, amongst other things, procrastination and the anxiety that it often manifests from. I wanted a creative project again.
 
+Still catching up to where I left off. To start with, I understand [[https://nixos.org/nixpkgs][Nix]], my chosen development environment/packaging system, a little better now. So let's migrate to nix flakes, doesn't look like I was doing much here anyway.
