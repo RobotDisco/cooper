@@ -22,5 +22,11 @@ pom.xml.asc
 
 # End of https://www.gitignore.io/api/clojure
 
-# Don't include direnv's outputs
+### Clojurescript ###
+out/
+
+### Language Server Project
+.lsp/
+
+### Direnv
 .direnv/

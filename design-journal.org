@@ -143,7 +143,7 @@ around one's REPL explorations as a way of recording how one developed the shape
 of their program instead of removing them when done. I wish I had preserved my
 earlier explorations for petal and player logic but I will have to recreate
 them.
-* Petal models
+* Log
 ** 2020-06-26
 Starting with the petals. They're somewhat bimodal, they have two states
 effectively
@@ -732,6 +732,41 @@ I moved code out of the journal and into source files.
 
 I also figured out how to write fixtures to instrument/unstrument functions as fixtures, as well as wrap spec checks in the clojure.test framework.
 ** 2022-12-26
+*** Re-awakening
 Life happened. I got a new cat. My job became involved. I got covid. I got heart failure. I recovered almost none the worse for wear. My job continued to be involved. The pandemic lightened into a kind of normal life again. I made a shrine for Cooper recently. I started therapy for, amongst other things, procrastination and the anxiety that it often manifests from. I wanted a creative project again.
 
 Still catching up to where I left off. To start with, I understand [[https://nixos.org/nixpkgs][Nix]], my chosen development environment/packaging system, a little better now. So let's migrate to nix flakes, doesn't look like I was doing much here anyway.
+*** Pivoting my approach
+I've realized a couple things since the last time I touched this project:
+1. It's important to have /some/ kind of end-to-end vision so you can constrain your designs. Bottom-up isn't enough if you don't understand the domain involved (and I am not a game developer, so I absolutely don't know what I'm doing here.)
+2. Tests are an important feedback, but you should have feedback over your whole design too. It's great to have specs and tests as a contract for your code to conform to, but tests/specs aren't enough to ensure that the contract you specify actually aligns to your end-to-end vision. As a back-end developer I have to accept that designing the frontend needs to happen as early as the backend (or each code module), and more importantly that I can prototype/iterate on every layer of this game in a malleable way. I can sketch out a UI and not necessarily constrain/ossify how the code looks, especially if I lean on iteration and feedback through the whole cycle.
+
+
+One of the reasons I remember not going further than I did before was because after I tests my idea of what a petal should look like in code, I didn't know where to go from there; I don't know how that piece fit into a whole game.
+
+So let's take a different tactic. Let's sketch out what this looks like to me, the game-player first. I'm not necessarily mocking out a whole functioning UI, but let's maybe hook up something simple and stupid to visualize my game logic in a way that approximates how I expect people to engage with this game. I think that will also help me understand both the code I need to write but also how each piece will fit against each other.
+*** Clojurescript is a better fit for this project
+The JVM's UI isn't great, there's a reason nobody writes games in Java. Kotlin, sure, for mobile apps? But even those UI frameworks don't exist on the desktop for me to leverage. I'll probably have to accept that I'll need the browser for quick UI sketching wins, something I could ignore in the past when I was purposely ignoring UI considerations.
+
+Luckily, most if not all of my code is likely platform-agnostic at this point. Let's validate this by trying to get what I have running in clojurescript instead of the clojure VM.
+
+OK, well, my user.clj has a lot of non-portable stuff. OK. Let's start with a test-runner?
+*** Spent a few hours trying to get tests to run in clojurescript. They fail silently but new tests from scratch work???
+OK, ignoring these for now. Let's basically start again and maybe move things over in a re-do. Let's start with building a silly UI prototype.
+
+(this was one of the reasons I remember trying to avoid javascript. The errors are worse than Clojure's)
+*** Let's draw a crappy UI prototype
+(nothing more than necessary. Let's draw a 4x7 petal grid in a browser.)
+
+[[https://github.com/oakes/play-cljc][Play-cljc]] is the front-runner game engine but it's probably more than I currently want to deal with. I assume it handles enough user input/output that I won't want to write my own game-engine, but for now I can do what I want fairly easily in a stupid way. It would also mean I could decide between Clojure and Clojurescript to see what runtime experience I prefer since cljc implies both JVM and browser runtimes are supported.
+
+I'm enticed by just using React/[[https://github.com/reagent-project/reagent][Reagent]] for games as well. For my purposes it shouldn't be that hard, I'm not dealing with a lot of movement and sprites interacting with each other.
+
+For now though, I'll just use a crappy canvas. Proof of concept. Nothing dynamic to start.
+
+
+
+
+
+
+
