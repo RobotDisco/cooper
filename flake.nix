@@ -13,6 +13,10 @@
         devShells."${system}".default = pkgs.mkShell {
           nativeBuildInputs = with pkgs; [
             clojure
+            # static analysis for Clojure(script) files
+            clojure-lsp
+            # static analysis for flake.nix file
+            rnix-lsp
             git
           ];
         };
