@@ -763,10 +763,14 @@ OK, ignoring these for now. Let's basically start again and maybe move things ov
 I'm enticed by just using React/[[https://github.com/reagent-project/reagent][Reagent]] for games as well. For my purposes it shouldn't be that hard, I'm not dealing with a lot of movement and sprites interacting with each other.
 
 For now though, I'll just use a crappy canvas. Proof of concept. Nothing dynamic to start.
+** 2022-12-27
+*** OK I have a crappy petal UI now. Can I adapt my petal model, including my old tests?
 
+Let's still do things in a TDD way.
+Let's use this to build a testing loop at least.
+What's the easiest next thing to implement that justifies tests?
+Is it drawing a petal of a size? Is that worth testing? Maybe not to start.
 
+Really want to build an Functional-Reactive-Programming style-rendering process. But that's a sidequest currently. So maybe tests aren't justified.
 
-
-
-
-
+Uh ... start to make a structure and a render function I guess?
