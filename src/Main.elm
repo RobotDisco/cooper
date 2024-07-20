@@ -45,8 +45,8 @@ init =
         cols =
             7
     in
-    { prow = 0
-    , pcol = 0
+    { prow = 1
+    , pcol = 1
     , rows = rows
     , cols = cols
 
@@ -64,7 +64,7 @@ update state _ =
 
 
 view : Model -> Html Model
-view model =
+view state =
     -- Board div
     div []
         -- Render each row. This probably should be its own function for
@@ -83,14 +83,14 @@ view model =
                                         col
                                     )
                                 , if
-                                    indexr
+                                    (indexr + 1)
                                         -- I want player to start at bottom left
                                         -- and move up-rightwards.
                                         -- But nature of board will be to start
                                         -- at top left and move down-rightwards.
-                                        == ((model.rows - 1) - model.prow)
-                                        && indexc
-                                        == model.pcol
+                                        == state.rows - state.prow + 1
+                                        && indexc + 1
+                                        == state.pcol
                                   then
                                     text "*"
 
@@ -101,5 +101,9 @@ view model =
                         row
                     )
             )
-            model.circles
+            state.circles ++ [
+                 text (String.fromInt state.prow)
+                     , text " "
+                     , text (String.fromInt state.pcol)
+                ]
         )
