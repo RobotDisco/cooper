@@ -7,6 +7,8 @@ import Html exposing (Html, div, span, text)
 type alias Model =
     { rows : Int
     , cols : Int
+    , prow : Int
+    , pcol : Int
 
     -- It'd be nice if I could derive dimensions from the content
     -- not additional metadata.
@@ -27,7 +29,9 @@ init =
         cols =
             7
     in
-    { rows = rows
+    { prow = 0
+    , pcol = 0
+    , rows = rows
     , cols = cols
 
     -- For now, generate fully extended petals to start.
@@ -49,12 +53,12 @@ view model =
     div []
         -- Render each row. This probably should be its own function for
         -- readability.
-        (List.map
-            (\row ->
+        (List.indexedMap
+            (\indexr row ->
                 div []
                     -- Render each column
-                    (List.map
-                        (\col ->
+                    (List.indexedMap
+                        (\indexc col ->
                             span []
                                 -- Pad each value by a space on each side
                                 [ text " "
@@ -62,7 +66,20 @@ view model =
                                     (String.fromInt
                                         col
                                     )
-                                , text " "
+                                , if
+                                    indexr
+                                        -- I want player to start at bottom left
+                                        -- and move up-rightwards.
+                                        -- But nature of board will be to start
+                                        -- at top left and move down-rightwards.
+                                        == ((model.rows - 1) - model.prow)
+                                        && indexc
+                                        == model.pcol
+                                  then
+                                    text "*"
+
+                                  else
+                                    text " "
                                 ]
                         )
                         row
