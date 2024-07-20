@@ -31,6 +31,7 @@ type alias Model =
     , circles : List (List Int)
     }
 
+type Msg = Up | Down | Left | Right | Invalid
 
 main =
     Browser.sandbox { init = init, update = update, view = view }
@@ -57,13 +58,17 @@ init =
             (List.range 1 rows)
     }
 
+update : Msg -> Model -> Model
+update msg state =
+    case msg of
+        Up -> { state | prow = min (state.prow + 1) state.rows }
+        Down -> { state | prow = max (state.prow - 1) 1 }
+        Left -> { state | pcol = max (state.pcol - 1) 1 }
+        Right -> { state | pcol = min (state.pcol + 1)  state.cols }
+        Invalid -> state
 
-update : Model -> Model -> Model
-update state _ =
-    state
 
-
-view : Model -> Html Model
+view : Model -> Html Msg
 view state =
     -- Board div
     div []
