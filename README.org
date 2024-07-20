@@ -18,4 +18,4 @@ This is a personal project, I suspect I won't take contributions.
 
 * License
 
-[AGPL](https://choosealicense.com/licenses/agpl/)
+[[https://choosealicense.com/licenses/agpl/][AGPL]]
