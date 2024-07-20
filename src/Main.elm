@@ -14,10 +14,13 @@
 -- You should have received a copy of the GNU Affero General Public License
 -- along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+
 module Main exposing (main)
 
 import Browser
+import Browser.Events
 import Html exposing (Html, div, span, text)
+import Json.Decode as Decode
 
 
 type alias Model =
@@ -31,14 +34,26 @@ type alias Model =
     , circles : List (List Int)
     }
 
-type Msg = Up | Down | Left | Right | Invalid
+
+type Msg
+    = Up
+    | Down
+    | Left
+    | Right
+    | Invalid
+
 
 main =
-    Browser.sandbox { init = init, update = update, view = view }
+    Browser.element
+        { init = init
+        , update = update
+        , view = view
+        , subscriptions = subscriptions
+        }
 
 
-init : Model
-init =
+init : () -> ( Model, Cmd Msg )
+init _ =
     let
         rows =
             4
@@ -46,26 +61,69 @@ init =
         cols =
             7
     in
-    { prow = 1
-    , pcol = 1
-    , rows = rows
-    , cols = cols
+    ( { prow = 1
+      , pcol = 1
+      , rows = rows
+      , cols = cols
 
-    -- For now, generate fully extended petals to start.
-    , circles =
-        List.map
-            (\_ -> List.map (\_ -> 100) (List.range 1 cols))
-            (List.range 1 rows)
-    }
+      -- For now, generate fully extended petals to start.
+      , circles =
+            List.map
+                (\_ -> List.map (\_ -> 100) (List.range 1 cols))
+                (List.range 1 rows)
+      }
+    , Cmd.none
+    )
 
-update : Msg -> Model -> Model
+
+keyPressDecoder : Decode.Decoder Msg
+keyPressDecoder =
+    Decode.map handleKeypress (Decode.field "key" Decode.string)
+
+
+handleKeypress : String -> Msg
+handleKeypress input =
+    case input of
+        "ArrowUp" ->
+            Up
+
+        "ArrowDown" ->
+            Down
+
+        "ArrowLeft" ->
+            Left
+
+        "ArrowRight" ->
+            Right
+
+        _ ->
+            Invalid
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Browser.Events.onKeyDown keyPressDecoder
+
+
+update : Msg -> Model -> ( Model, Cmd msg )
 update msg state =
-    case msg of
-        Up -> { state | prow = min (state.prow + 1) state.rows }
-        Down -> { state | prow = max (state.prow - 1) 1 }
-        Left -> { state | pcol = max (state.pcol - 1) 1 }
-        Right -> { state | pcol = min (state.pcol + 1)  state.cols }
-        Invalid -> state
+    ( case msg of
+        Up ->
+            { state | prow = min (state.prow + 1) state.rows }
+
+        Down ->
+            { state | prow = max (state.prow - 1) 1 }
+
+        Left ->
+            { state | pcol = max (state.pcol - 1) 1 }
+
+        Right ->
+            { state | pcol = min (state.pcol + 1) state.cols }
+
+        Invalid ->
+            state
+    , Cmd.none
+    )
 
 
 view : Model -> Html Msg
@@ -93,8 +151,11 @@ view state =
                                         -- and move up-rightwards.
                                         -- But nature of board will be to start
                                         -- at top left and move down-rightwards.
-                                        == state.rows - state.prow + 1
-                                        && indexc + 1
+                                        == state.rows
+                                        - state.prow
+                                        + 1
+                                        && indexc
+                                        + 1
                                         == state.pcol
                                   then
                                     text "*"
@@ -106,9 +167,9 @@ view state =
                         row
                     )
             )
-            state.circles ++ [
-                 text (String.fromInt state.prow)
-                     , text " "
-                     , text (String.fromInt state.pcol)
-                ]
+            state.circles
+            ++ [ text (String.fromInt state.prow)
+               , text " "
+               , text (String.fromInt state.pcol)
+               ]
         )
