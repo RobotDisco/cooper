@@ -170,6 +170,8 @@ view state =
                                         col
                                     )
                                 , if
+                                    -- Print "*" if the player is located here
+                                    -- an empty space otherwise.
                                     (indexr + 1)
                                         -- I want player to start at bottom left
                                         -- and move up-rightwards.
@@ -192,6 +194,7 @@ view state =
                     )
             )
             state.circles
+            -- Print the player position coordinates for debugging purposes.
             ++ [ text (String.fromInt state.prow)
                , text " "
                , text (String.fromInt state.pcol)
