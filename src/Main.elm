@@ -86,15 +86,23 @@ handleKeypress input =
     case input of
         "ArrowUp" ->
             Up
+        "k" -> Up
+        "w" -> Up
 
         "ArrowDown" ->
             Down
+        "j" -> Down
+        "s" -> Down
 
         "ArrowLeft" ->
             Left
+        "h" -> Left
+        "a" -> Left
 
         "ArrowRight" ->
             Right
+        "l" -> Right
+        "d" -> Right
 
         _ ->
             Invalid
