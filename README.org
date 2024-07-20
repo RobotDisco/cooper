@@ -1,0 +1,21 @@
+* Cooper Memorial Game
+
+Cooper Memorial Game is a game in the style of Toppler/Perestroika.
+
+Run across the petals, eat the goal at the end. Don't fall in the water!
+
+## Installation
+
+TODO 
+
+## Usage
+
+TODO
+
+## Contributing
+
+This is a personal project, I suspect I won't take contributions.
+
+## License
+
+[AGPL](https://choosealicense.com/licenses/agpl/)
