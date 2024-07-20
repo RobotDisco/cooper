@@ -4,18 +4,18 @@ Cooper Memorial Game is a game in the style of Toppler/Perestroika.
 
 Run across the petals, eat the goal at the end. Don't fall in the water!
 
-## Installation
+* Installation
 
 TODO 
 
-## Usage
+* Usage
 
 TODO
 
-## Contributing
+* Contributing
 
 This is a personal project, I suspect I won't take contributions.
 
-## License
+* License
 
 [AGPL](https://choosealicense.com/licenses/agpl/)
