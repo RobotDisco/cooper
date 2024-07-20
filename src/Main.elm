@@ -1,16 +1,16 @@
 -- cooper; web game that is a homage to toppler/perestroika.
 -- Copyright (C) 2024 Gaelan D'costa (gdcosta@gmail.com)
-
+--
 -- This program is free software: you can redistribute it and/or modify it under
 -- the terms of the GNU Affero General Public License as published by the Free
 -- Software Foundation, either version 3 of the License, or (at your option) any
 -- later version.
-
+--
 -- This program is distributed in the hope that it will be useful, but WITHOUT
 -- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 -- FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
 -- details.
-
+--
 -- You should have received a copy of the GNU Affero General Public License
 -- along with this program. If not, see <https://www.gnu.org/licenses/>.
 
@@ -86,23 +86,39 @@ handleKeypress input =
     case input of
         "ArrowUp" ->
             Up
-        "k" -> Up
-        "w" -> Up
+
+        "k" ->
+            Up
+
+        "w" ->
+            Up
 
         "ArrowDown" ->
             Down
-        "j" -> Down
-        "s" -> Down
+
+        "j" ->
+            Down
+
+        "s" ->
+            Down
 
         "ArrowLeft" ->
             Left
-        "h" -> Left
-        "a" -> Left
+
+        "h" ->
+            Left
+
+        "a" ->
+            Left
 
         "ArrowRight" ->
             Right
-        "l" -> Right
-        "d" -> Right
+
+        "l" ->
+            Right
+
+        "d" ->
+            Right
 
         _ ->
             Invalid
