@@ -32,6 +32,7 @@ type alias Model =
     -- It'd be nice if I could derive dimensions from the content
     -- not additional metadata.
     , circles : List (List Int)
+    , level : Int
     }
 
 
@@ -61,10 +62,16 @@ init _ =
         cols =
             7
     in
-    ( { prow = 1
+    ( { -- Player coordinates
+        prow = 1
       , pcol = 1
+
+      -- Board dimensions
       , rows = rows
       , cols = cols
+
+      -- Game progression
+      , level = 1
 
       -- For now, generate fully extended petals to start.
       , circles =
@@ -195,8 +202,17 @@ view state =
             )
             state.circles
             -- Print the player position coordinates for debugging purposes.
-            ++ [ text (String.fromInt state.prow)
-               , text " "
-               , text (String.fromInt state.pcol)
+            ++ [ div []
+                    [ text (String.fromInt state.prow)
+                    , text " "
+                    , text (String.fromInt state.pcol)
+                    ]
+               , div []
+                    [ text "Level: "
+                    , text (String.fromInt state.level)
+                    ]
+               , div []
+                    [ text "HACKDAY TOPPLER 0.0000000000000000001"
+                    ]
                ]
         )
