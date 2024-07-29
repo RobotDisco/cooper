@@ -138,21 +138,37 @@ subscriptions _ =
 
 update : Msg -> Model -> ( Model, Cmd msg )
 update msg state =
-    ( case msg of
-        Up ->
-            { state | prow = min (state.prow + 1) state.rows }
+    let
+        -- Update the player position based on key positions
+        mvstate =
+            case msg of
+                Up ->
+                    { state | prow = min (state.prow + 1) state.rows }
 
-        Down ->
-            { state | prow = max (state.prow - 1) 1 }
+                Down ->
+                    { state | prow = max (state.prow - 1) 1 }
 
-        Left ->
-            { state | pcol = max (state.pcol - 1) 1 }
+                Left ->
+                    { state | pcol = max (state.pcol - 1) 1 }
 
-        Right ->
-            { state | pcol = min (state.pcol + 1) state.cols }
+                Right ->
+                    { state | pcol = min (state.pcol + 1) state.cols }
 
-        Invalid ->
-            state
+                Invalid ->
+                    state
+        -- If the player has reached the goal level, move to next level.
+        -- Set the player back to the starting position.
+        lvlstate =
+            if
+                (mvstate.prow == mvstate.rows)
+                    && (mvstate.pcol == mvstate.cols)
+            then
+                { mvstate | level = mvstate.level + 1, pcol = 1, prow = 1 }
+
+            else
+                mvstate
+    in
+    ( lvlstate
     , Cmd.none
     )
 
