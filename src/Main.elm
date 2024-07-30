@@ -24,23 +24,37 @@ import Json.Decode as Decode
 import Process
 import Task
 
-type GamePhase = Playing | NewLevel
+-- This currently means we have two different screens
+-- the screen where the game is played, and a banner screen
+-- when you change levels.
+type GamePhase
+    = Playing
+    | NewLevel
 
+-- Used for positions on the board
+type alias Coords =
+    -- First :: current row
+    -- Second :: current column
+    ( Int, Int )
+
+-- This is the game state
 type alias Model =
+    -- row/cols: defines the dimension of the game board
     { rows : Int
     , cols : Int
-    , prow : Int
-    , pcol : Int
+    -- current player position
+    , pos : Coords
 
     -- It'd be nice if I could derive dimensions from the content
-    -- not additional metadata.
+    -- not additional metadata. For now, this is the current game board state
     , circles : List (List Int)
     , level : Int
+
     -- This determines what the root view should look like
     , phase : GamePhase
     }
 
-
+-- List of input messages from the game, either by the user or internally
 type Msg
     = Up
     | Down
@@ -49,7 +63,13 @@ type Msg
     | Invalid
     | ShowBoard
 
-
+-- Basic Elm framework
+--
+-- init: is a function that sets up the logic state
+-- update: takes the current state and a command from our subscriptions
+-- view: takes a state and turns it into HTML that optionally derives from a
+-- message.
+-- subscriptions: A channel of stuff that comes from the outside world.
 main =
     Browser.element
         { init = init
@@ -58,7 +78,7 @@ main =
         , subscriptions = subscriptions
         }
 
-
+-- Generate the starting game state.
 init : () -> ( Model, Cmd Msg )
 init _ =
     let
@@ -69,8 +89,7 @@ init _ =
             7
     in
     ( { -- Player coordinates
-        prow = 1
-      , pcol = 1
+        pos = startPos
 
       -- Board dimensions
       , rows = rows
@@ -91,12 +110,16 @@ init _ =
     , Cmd.none
     )
 
-
+-- Get relevant data out of a keyPress event, via javascript parsing.
 keyPressDecoder : Decode.Decoder Msg
 keyPressDecoder =
     Decode.map handleKeypress (Decode.field "key" Decode.string)
 
-
+-- Turn relevant keypress data into a game message.
+-- We choose to handle the following keyboard scemes:
+-- Up/Down/Left/Right
+-- vim bindings, hjkl
+-- first-person-shooter bindings, wasd
 handleKeypress : String -> Msg
 handleKeypress input =
     case input of
@@ -135,16 +158,80 @@ handleKeypress input =
 
         "d" ->
             Right
-
+        -- Ignore invalid inputs.
         _ ->
             Invalid
 
-
+-- Register to browser keydown events and pass to our encoder
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Browser.Events.onKeyDown keyPressDecoder
 
+-- A global constant indicating the position where the player should
+-- start on a new game board.
+startPos : Coords
+startPos = (1,1)
 
+-- Move the game player across the board without letting it fall off the
+-- screen.
+-- When you're not on the gameplay screen, don't allow the player to be moved.
+movePos : Coords -> Model -> Model
+movePos offset state =
+    case state.phase of
+        Playing ->
+            let
+                minRow =
+                    1
+
+                maxRow =
+                    state.rows
+
+                minCol =
+                    1
+
+                maxCol =
+                    state.cols
+
+                offsetRow =
+                    Tuple.first offset
+
+                offsetCol =
+                    Tuple.second offset
+
+                newRow =
+                    Tuple.first state.pos + offsetRow
+
+                newCol =
+                    Tuple.second state.pos + offsetCol
+
+                clipRow =
+                    max minRow <| min maxRow newRow
+
+                clipCol =
+                    max minCol <| min maxCol newCol
+            in
+            { state | pos = ( clipRow, clipCol ) }
+
+        _ ->
+            state
+
+moveUp : Model -> Model
+moveUp =
+    movePos ( 1, 0 )
+
+moveDown : Model -> Model
+moveDown =
+    movePos ( -1, 0 )
+
+moveLeft : Model -> Model
+moveLeft =
+    movePos ( 0, -1 )
+
+moveRight : Model -> Model
+moveRight =
+    movePos ( 0, 1 )
+
+-- General game progression handler
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg state =
     let
@@ -152,39 +239,52 @@ update msg state =
         mvstate =
             case msg of
                 Up ->
-                    { state | prow = min (state.prow + 1) state.rows }
+                    moveUp state
 
                 Down ->
-                    { state | prow = max (state.prow - 1) 1 }
+                    moveDown state
 
                 Left ->
-                    { state | pcol = max (state.pcol - 1) 1 }
+                    moveLeft state
 
                 Right ->
-                    { state | pcol = min (state.pcol + 1) state.cols }
+                    moveRight state
 
                 Invalid ->
                     state
 
                 ShowBoard ->
                     { state | phase = Playing }
+
         -- If the player has reached the goal level, move to next level.
         -- Set the player back to the starting position.
+        -- Also set the game board to a transition banner (we'll escape from it
+        -- later.)
         lvlState =
             if
-                (mvstate.prow == mvstate.rows)
-                    && (mvstate.pcol == mvstate.cols)
+                mvstate.pos == (mvstate.rows, mvstate.cols)
             then
-                { mvstate | level = mvstate.level + 1, pcol = 1, prow = 1, phase
-                    = NewLevel }
+                { mvstate
+                    | level = mvstate.level + 1
+                    , pos = ( 1, 1 )
+                    , phase =
+                        NewLevel
+                }
 
             else
                 mvstate
-        lvlCommand = case lvlState.phase of
-                         NewLevel ->
-                             Process.sleep 2000 |> Task.perform (always ShowBoard)
-                         Playing ->
-                             Cmd.none
+
+        -- If we have triggered a new level (see lvlState.phase) send a command
+        -- along with the new state that starts a timer for some amount of time
+        -- that, when it fires, will set us back to the game board via an
+        -- emitted Msg.
+        lvlCommand =
+            case lvlState.phase of
+                NewLevel ->
+                    Process.sleep 2000 |> Task.perform (always ShowBoard)
+
+                _ ->
+                    Cmd.none
     in
     ( lvlState
     , lvlCommand
@@ -193,8 +293,11 @@ update msg state =
 
 newLevelView : Model -> Html Msg
 newLevelView state =
-    div [] [ text "NEW LEVEL YOOOOOOO !!!! ENTERING LEVEL "
-           , text (String.fromInt state.level) ]
+    div []
+        [ text "NEW LEVEL YOOOOOOO !!!! ENTERING LEVEL "
+        , text (String.fromInt state.level)
+        ]
+
 
 gameView : Model -> Html Msg
 gameView state =
@@ -224,11 +327,11 @@ gameView state =
                                         -- But nature of board will be to start
                                         -- at top left and move down-rightwards.
                                         == state.rows
-                                        - state.prow
+                                        - Tuple.first state.pos
                                         + 1
                                         && indexc
                                         + 1
-                                        == state.pcol
+                                        == Tuple.second state.pos
                                   then
                                     text "*"
 
@@ -242,25 +345,32 @@ gameView state =
             state.circles
             -- Print the player position coordinates for debugging purposes.
             ++ [ div []
-                    [ text (String.fromInt state.prow)
+                    [ text (String.fromInt (Tuple.first state.pos))
                     , text " "
-                    , text (String.fromInt state.pcol)
+                    , text (String.fromInt (Tuple.second state.pos))
                     ]
+               -- Print the current level for debugging purposes
                , div []
                     [ text "Level: "
                     , text (String.fromInt state.level)
                     ]
+               -- Print an App title, for silly reasons
                , div []
                     [ text "HACKDAY TOPPLER 0.0000000000000000001"
                     ]
                ]
         )
 
+-- Based on the game phase, pick the view to render.
 view : Model -> Html Msg
 view state =
     let
-        curView = case state.phase of
-                   NewLevel -> newLevelView
-                   Playing -> gameView
+        curView =
+            case state.phase of
+                NewLevel ->
+                    newLevelView
+
+                Playing ->
+                    gameView
     in
-        curView state
+    curView state
