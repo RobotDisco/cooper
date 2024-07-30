@@ -21,7 +21,10 @@ import Browser
 import Browser.Events
 import Html exposing (Html, div, span, text)
 import Json.Decode as Decode
+import Process
+import Task
 
+type GamePhase = Playing | NewLevel
 
 type alias Model =
     { rows : Int
@@ -33,6 +36,8 @@ type alias Model =
     -- not additional metadata.
     , circles : List (List Int)
     , level : Int
+    -- This determines what the root view should look like
+    , phase : GamePhase
     }
 
 
@@ -42,6 +47,7 @@ type Msg
     | Left
     | Right
     | Invalid
+    | ShowBoard
 
 
 main =
@@ -72,6 +78,9 @@ init _ =
 
       -- Game progression
       , level = 1
+
+      -- The game starts on the Game Board
+      , phase = Playing
 
       -- For now, generate fully extended petals to start.
       , circles =
@@ -136,7 +145,7 @@ subscriptions _ =
     Browser.Events.onKeyDown keyPressDecoder
 
 
-update : Msg -> Model -> ( Model, Cmd msg )
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg state =
     let
         -- Update the player position based on key positions
@@ -156,25 +165,39 @@ update msg state =
 
                 Invalid ->
                     state
+
+                ShowBoard ->
+                    { state | phase = Playing }
         -- If the player has reached the goal level, move to next level.
         -- Set the player back to the starting position.
-        lvlstate =
+        lvlState =
             if
                 (mvstate.prow == mvstate.rows)
                     && (mvstate.pcol == mvstate.cols)
             then
-                { mvstate | level = mvstate.level + 1, pcol = 1, prow = 1 }
+                { mvstate | level = mvstate.level + 1, pcol = 1, prow = 1, phase
+                    = NewLevel }
 
             else
                 mvstate
+        lvlCommand = case lvlState.phase of
+                         NewLevel ->
+                             Process.sleep 2000 |> Task.perform (always ShowBoard)
+                         Playing ->
+                             Cmd.none
     in
-    ( lvlstate
-    , Cmd.none
+    ( lvlState
+    , lvlCommand
     )
 
 
-view : Model -> Html Msg
-view state =
+newLevelView : Model -> Html Msg
+newLevelView state =
+    div [] [ text "NEW LEVEL YOOOOOOO !!!! ENTERING LEVEL "
+           , text (String.fromInt state.level) ]
+
+gameView : Model -> Html Msg
+gameView state =
     -- Board div
     div []
         -- Render each row. This probably should be its own function for
@@ -232,3 +255,12 @@ view state =
                     ]
                ]
         )
+
+view : Model -> Html Msg
+view state =
+    let
+        curView = case state.phase of
+                   NewLevel -> newLevelView
+                   Playing -> gameView
+    in
+        curView state
