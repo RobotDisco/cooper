@@ -194,8 +194,10 @@ handleKeypress input =
 
 -- Register to browser keydown events and pass to our encoder
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Browser.Events.onKeyDown keyPressDecoder
+subscriptions state =
+    case state.phase of
+        Playing -> Browser.Events.onKeyDown keyPressDecoder
+        _ -> Sub.none
 
 -- Move the game player across the board without letting it fall off the
 -- screen.

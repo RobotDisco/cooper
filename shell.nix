@@ -5,5 +5,6 @@ pkgs.mkShell {
     pkgs.elmPackages.elm
     pkgs.elmPackages.elm-format
     pkgs.elmPackages.elm-language-server
+    pkgs.tmux
   ];
 }
