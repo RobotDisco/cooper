@@ -20,10 +20,15 @@ module Main exposing (main)
 import Browser
 import Browser.Events
 import Html exposing (Html, div, span, text)
+import Html.Attributes exposing (style)
 import Json.Decode as Decode
 import Process
+import Svg exposing (circle, svg)
+import Svg.Attributes exposing (cx, cy, fill, height, r, viewBox, width)
 import Task
 import Time
+
+
 
 -- stupid fucking elm doesn't allow access to specific elements in a list
 -- without requiring a Maybe, no time to handle this properly, will deal with
@@ -33,101 +38,176 @@ import Time
 -- does parametric polymorphism so I need two different getters here.
 --
 -- TODO Clean up later.
-get n xs  =
-    let fuck = List.head (List.drop n xs)
+
+
+get n xs =
+    let
+        fuck =
+            List.head (List.drop n xs)
     in
-        case fuck of
-            Just a -> a
-            Nothing ->  Empty
-get2 n xs  =
-    let fuck = List.head (List.drop n xs)
+    case fuck of
+        Just a ->
+            a
+
+        Nothing ->
+            Empty
+
+
+get2 n xs =
+    let
+        fuck =
+            List.head (List.drop n xs)
     in
-        case fuck of
-            Just a -> a
-            Nothing ->  []
+    case fuck of
+        Just a ->
+            a
+
+        Nothing ->
+            []
+
+
 
 -- This currently means we have two different screens
 -- the screen where the game is played, and a banner screen
 -- when you change levels.
+
+
 type GamePhase
     = Playing
     | Dead
     | NewLevel
     | GameWon
 
+
+
 -- Used for positions on the board
+
+
 type alias Coords =
     -- First :: current row
     -- Second :: current column
     ( Int, Int )
 
+
+
 -- A global constant indicating the position where the player should
 -- start on a new game board.
+
+
 startPos : Coords
-startPos = (1,1)
+startPos =
+    ( 1, 1 )
+
+
 
 -- Current player location row
+
+
 posRow : Model -> Int
-posRow state = Tuple.first state.pos
+posRow state =
+    Tuple.first state.pos
+
+
 
 -- Current player location column
+
+
 posCol : Model -> Int
-posCol state = Tuple.second state.pos
+posCol state =
+    Tuple.second state.pos
+
+
 
 -- Current board size in rows
+
+
 dimRows : Model -> Int
-dimRows state = Tuple.first state.dims
+dimRows state =
+    Tuple.first state.dims
+
+
 
 -- Current board size in colums
+
+
 dimCols : Model -> Int
-dimCols state = Tuple.second state.dims
+dimCols state =
+    Tuple.second state.dims
+
+
 
 -- Determine board size based on input level
 -- Cal to a certain size to not get ridiculous.
+
+
 genDims : Int -> Coords
 genDims lvl =
     let
-        cols = min 16 <| 6.0 + toFloat lvl
-        rows = cols / 2.0 |> ceiling
+        cols =
+            min 16 <| 6.0 + toFloat lvl
+
+        rows =
+            cols / 2.0 |> ceiling
     in
-        (rows, round cols)
+    ( rows, round cols )
 
 
 maxPetal : Int
-maxPetal = 10
+maxPetal =
+    10
 
-type BoardSquare = Petal Int Int | Empty
+
+type BoardSquare
+    = Petal Int Int
+    | Empty
+
+
 
 -- Generate petals based on game board size
+
+
 genCircles : Coords -> List (List BoardSquare)
-genCircles (rows, cols) = List.map
-                          (\_ -> List.map (\_ -> Petal 10 1) (List.range 1 <| cols))
-                          (List.range 1 <| rows)
+genCircles ( rows, cols ) =
+    List.map
+        (\_ -> List.map (\_ -> Petal 10 1) (List.range 1 <| cols))
+        (List.range 1 <| rows)
+
 
 tickCircles : List (List BoardSquare) -> Int -> List (List BoardSquare)
 tickCircles board ticks =
-    List.map (\r ->
-                  List.map (\c ->
-                                case c of
-                                    Petal size rate -> (if (modBy rate ticks) == 0
-                                                       then (if size <= 1
-                                                             then
-                                                                 Empty
-                                                             else
-                                                                 Petal (size - 1) rate)
-                                                       else
-                                                           Petal size rate)
-                                    Empty -> (if 0 == 1
-                                              then
-                                                  Petal maxPetal
-                                                  1
-                                              else
-                                                  Empty))
-                                r)
-                  board
+    List.map
+        (\r ->
+            List.map
+                (\c ->
+                    case c of
+                        Petal size rate ->
+                            if modBy rate ticks == 0 then
+                                if size <= 1 then
+                                    Empty
+
+                                else
+                                    Petal (size - 1) rate
+
+                            else
+                                Petal size rate
+
+                        Empty ->
+                            if 0 == 1 then
+                                Petal maxPetal
+                                    1
+
+                            else
+                                Empty
+                )
+                r
+        )
+        board
+
+
 type alias Model =
     -- row/cols: defines the dimension of the game board
     { dims : Coords
+
     -- current player position
     , pos : Coords
 
@@ -138,11 +218,14 @@ type alias Model =
 
     -- This determines what the root view should look like
     , phase : GamePhase
-
     , ticks : Int
     }
 
+
+
 -- List of input messages from the game, either by the user or internally
+
+
 type Msg
     = Up
     | Down
@@ -153,6 +236,8 @@ type Msg
     | ShowDead
     | Tick
 
+
+
 -- Basic Elm framework
 --
 -- init: is a function that sets up the logic state
@@ -160,6 +245,8 @@ type Msg
 -- view: takes a state and turns it into HTML that optionally derives from a
 -- message.
 -- subscriptions: A channel of stuff that comes from the outside world.
+
+
 main =
     Browser.element
         { init = init
@@ -168,12 +255,19 @@ main =
         , subscriptions = subscriptions
         }
 
+
+
 -- Generate the starting game state.
+
+
 init : () -> ( Model, Cmd Msg )
 init _ =
     let
-        startLvl = 1
-        dims = genDims startLvl
+        startLvl =
+            1
+
+        dims =
+            genDims startLvl
     in
     ( { -- Player coordinates
         pos = startPos
@@ -189,22 +283,29 @@ init _ =
 
       -- For now, generate fully extended petals to start.
       , circles = genCircles dims
-
       , ticks = 1
       }
     , Cmd.none
     )
 
+
+
 -- Get relevant data out of a keyPress event, via javascript parsing.
+
+
 keyPressDecoder : Decode.Decoder Msg
 keyPressDecoder =
     Decode.map handleKeypress (Decode.field "key" Decode.string)
+
+
 
 -- Turn relevant keypress data into a game message.
 -- We choose to handle the following keyboard scemes:
 -- Up/Down/Left/Right
 -- vim bindings, hjkl
 -- first-person-shooter bindings, wasd
+
+
 handleKeypress : String -> Msg
 handleKeypress input =
     case input of
@@ -243,22 +344,35 @@ handleKeypress input =
 
         "d" ->
             Right
+
         -- Ignore invalid inputs.
         _ ->
             Invalid
 
+
+
 -- Register to browser keydown events and pass to our encoder
+
+
 subscriptions : Model -> Sub Msg
 subscriptions state =
     case state.phase of
-        Playing -> Sub.batch [ Browser.Events.onKeyDown keyPressDecoder
-                             , Time.every 500 (\_ -> Tick)
-                             ]
-        _ -> Sub.none
+        Playing ->
+            Sub.batch
+                [ Browser.Events.onKeyDown keyPressDecoder
+                , Time.every 500 (\_ -> Tick)
+                ]
+
+        _ ->
+            Sub.none
+
+
 
 -- Move the game player across the board without letting it fall off the
 -- screen.
 -- When you're not on the gameplay screen, don't allow the player to be moved.
+
+
 movePos : Coords -> Model -> Model
 movePos offset state =
     case state.phase of
@@ -299,23 +413,31 @@ movePos offset state =
         _ ->
             state
 
+
 moveUp : Model -> Model
 moveUp =
     movePos ( 1, 0 )
+
 
 moveDown : Model -> Model
 moveDown =
     movePos ( -1, 0 )
 
+
 moveLeft : Model -> Model
 moveLeft =
     movePos ( 0, -1 )
+
 
 moveRight : Model -> Model
 moveRight =
     movePos ( 0, 1 )
 
+
+
 -- General game progression handler
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg state =
     let
@@ -342,6 +464,7 @@ update msg state =
                         | ticks = state.ticks + 1
                         , circles = tickCircles state.circles state.ticks
                     }
+
                 ShowBoard ->
                     { state | phase = Playing }
 
@@ -350,7 +473,7 @@ update msg state =
                     -- its own message rather than in my giant logic chunk
                     -- under.
                     -- This being said, this whole thing needs a refactoring.
-                    {  state
+                    { state
                         | pos = startPos
                         , circles = genCircles state.dims
                         , phase = Playing
@@ -359,15 +482,23 @@ update msg state =
 
         deadstate =
             let
-                prow = posRow state
-                pcol = posCol state
-                petal = get (pcol - 1) (get2 (prow - 1) state.circles)
+                prow =
+                    posRow state
+
+                pcol =
+                    posCol state
+
+                petal =
+                    get (pcol - 1) (get2 (prow - 1) state.circles)
             in
-                case petal of
-                    Petal _ _ -> mvstate
-                    Empty -> { mvstate
-                             | phase = Dead
-                             }
+            case petal of
+                Petal _ _ ->
+                    mvstate
+
+                Empty ->
+                    { mvstate
+                        | phase = Dead
+                    }
 
         -- If the player has reached the goal level, move to next level.
         -- Set the player back to the starting position.
@@ -375,28 +506,30 @@ update msg state =
         -- Also set the game board to a transition banner (we'll escape from it
         -- later.)
         lvlState =
-            if
-                deadstate.phase /= Dead && deadstate.pos == deadstate.dims
-            then
+            if deadstate.phase /= Dead && deadstate.pos == deadstate.dims then
                 -- If we were on level 25, we've won the game.
-                if deadstate.level == 25
-                then
+                if deadstate.level == 25 then
                     { deadstate | phase = GameWon }
+
                 else
-                    let newLevel = deadstate.level + 1
-                        newDims = genDims newLevel
+                    let
+                        newLevel =
+                            deadstate.level + 1
+
+                        newDims =
+                            genDims newLevel
                     in
-                        { deadstate
-                            | level = newLevel
-                            , dims = newDims
-                            , pos = startPos
-                            , circles = genCircles newDims
-                            , phase = NewLevel
-                            , ticks = 0
-                        }
+                    { deadstate
+                        | level = newLevel
+                        , dims = newDims
+                        , pos = startPos
+                        , circles = genCircles newDims
+                        , phase = NewLevel
+                        , ticks = 0
+                    }
+
             else
                 deadstate
-
 
         -- If we have triggered a new level (see lvlState.phase) send a command
         -- along with the new state that starts a timer for some amount of time
@@ -408,8 +541,10 @@ update msg state =
             case lvlState.phase of
                 NewLevel ->
                     Process.sleep 2000 |> Task.perform (always ShowBoard)
+
                 Dead ->
                     Process.sleep 3000 |> Task.perform (always ShowDead)
+
                 _ ->
                     Cmd.none
     in
@@ -425,6 +560,7 @@ newLevelView state =
         , text (String.fromInt state.level)
         ]
 
+
 gameWonView : Model -> Html Msg
 gameWonView state =
     div []
@@ -436,65 +572,161 @@ gameView : Model -> Html Msg
 gameView state =
     -- Board div
     div []
-        -- Render each row. This probably should be its own function for
-        -- readability.
-        (List.indexedMap
-            (\indexr row ->
-                div []
-                    -- Render each column
-                    (List.indexedMap
-                        (\indexc col ->
-                             let
-                                 -- I want player to start at bottom left
-                                 -- and move up-rightwards.
-                                 -- But nature of board will be to start
-                                 -- at top left and move down-rightwards.
-                                 playerHere = ((indexr + 1) == ((dimRows state)
-                                                               - (posRow state) + 1) && (indexc + 1) == (posCol state))
-                                 squareTxt =                                  case col of
-                                     Petal size _ -> (String.padLeft 2 '0'
-                                                          (String.fromInt size) ++
-                                                          if playerHere then "* " else " ")
-                                     Empty -> if playerHere then " XX " else " -- "
-                             in
-                            span []
-                                -- Pad each value by a space on each side
-                                [ text squareTxt ]
+        [ div
+            [ style "background-color" "blue"
+            , style "display" "flex"
+            , style
+                "flex-direction"
+                "column"
+            , style "align-items" "center"
+            , style "justify-content" "center"
+            , style "height" "50vh"
+            , width
+                "100vw"
+            ]
+            -- Render each row. This probably should be its own function for
+            -- readability.
+            (List.indexedMap
+                (\indexr row ->
+                    div
+                        [ style "display" "flex"
+                        , style "flex-direction" "row"
+                        , style
+                            "flex"
+                            "1"
+                        ]
+                        -- Render each column
+                        (List.indexedMap
+                            (\indexc col ->
+                                let
+                                    -- I want player to start at bottom left
+                                    -- and move up-rightwards.
+                                    -- But nature of board will be to start
+                                    -- at top left and move down-rightwards.
+                                    playerHere =
+                                        (indexr + 1)
+                                            == (dimRows state
+                                                    - posRow state
+                                                    + 1
+                                               )
+                                            && (indexc + 1)
+                                            == posCol
+                                                state
+                                in
+                                let
+                                    gridSize =
+                                        100
+
+                                    radius =
+                                        case col of
+                                            Petal size _ ->
+                                                (toFloat
+                                                    size
+                                                    / 10.0
+                                                )
+                                                    * (gridSize / 2.0)
+
+                                            Empty ->
+                                                10.0 / 2.0
+                                in
+                                div
+                                    [ style "flex" "1"
+                                    , style "display"
+                                        "flex"
+                                    , style "align-items"
+                                        "center"
+                                    , style "justify-content" "center"
+                                    ]
+                                    [ svg
+                                        [ viewBox "0 0 100 100"
+                                        , style "width"
+                                            "90%"
+                                        , style "height" "90%"
+                                        ]
+                                        [ circle
+                                            [ cx "50"
+                                            , cy "50"
+                                            , r (String.fromFloat radius)
+                                            , fill
+                                                (case col of
+                                                    Petal _ _ ->
+                                                        "green"
+
+                                                    Empty ->
+                                                        "blue"
+                                                )
+                                            ]
+                                            []
+                                        , circle
+                                            [ cx "50"
+                                            , cy "50"
+                                            , r "10"
+                                            , fill
+                                                (if playerHere then
+                                                    case col of
+                                                        Petal _ _ ->
+                                                            "yellow"
+
+                                                        Empty ->
+                                                            "red"
+
+                                                 else
+                                                    case col of
+                                                        Petal _ _ ->
+                                                            "green"
+
+                                                        Empty ->
+                                                            "blue"
+                                                )
+                                            ]
+                                            []
+                                        ]
+                                    ]
+                            )
+                            row
                         )
-                        row
-                    )
+                )
+                state.circles
+             -- Print the player position coordinates for debugging purposes.
             )
-            state.circles
-            -- Print the player position coordinates for debugging purposes.
-            ++ [ div []
-                    [ text "Position: "
-                    , text (String.fromInt (Tuple.first state.pos))
-                    , text " "
-                    , text (String.fromInt (Tuple.second state.pos))
-                    ]
-               -- Print the current level for debugging purposes
-               , div []
-                    [ text "Level: "
-                    , text (String.fromInt state.level)
-                    , text " Rows: "
-                    , text (String.fromInt <| dimRows state)
-                    , text " Columns: "
-                    , text (String.fromInt <| dimCols state)
-                    ]
-               , div []
-                   [ text "Ticks: "
-                   , text (String.fromInt state.ticks)
-                   ]
-               -- Print an App title, for silly reasons
-               , div []
-                    [ text (if state.phase == Dead
-                            then "TRY AGAIN"
-                            else "HACKDAY TOPPLER 0.0000000000000000001")
-                    ]
-               ]
-        )
+        , div []
+            [ text "Position: "
+            , text (String.fromInt (Tuple.first state.pos))
+            , text " "
+            , text (String.fromInt (Tuple.second state.pos))
+            ]
+
+        -- Print the current level for debugging purposes
+        , div []
+            [ text "Level: "
+            , text (String.fromInt state.level)
+            , text " Rows: "
+            , text (String.fromInt <| dimRows state)
+            , text " Columns: "
+            , text (String.fromInt <| dimCols state)
+            ]
+        , div []
+            [ text "Ticks: "
+            , text (String.fromInt state.ticks)
+            ]
+
+        -- Print an App title, for silly reasons
+        , div []
+            [ text
+                (if state.phase == Dead then
+                    "TRY AGAIN"
+
+                 else
+                    "HACKDAY TOPPLER 0.0000000000000000001"
+                )
+            ]
+        ]
+
+
 
 -- Based on the game phase, pick the view to render.
+
+
 view : Model -> Html Msg
 view state =
     let
