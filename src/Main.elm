@@ -23,12 +23,35 @@ import Html exposing (Html, div, span, text)
 import Json.Decode as Decode
 import Process
 import Task
+import Time
+
+-- stupid fucking elm doesn't allow access to specific elements in a list
+-- without requiring a Maybe, no time to handle this properly, will deal with
+-- later.
+--
+-- Of course, this means I have to deal with types. And I don't think that Elm
+-- does parametric polymorphism so I need two different getters here.
+--
+-- TODO Clean up later.
+get n xs  =
+    let fuck = List.head (List.drop n xs)
+    in
+        case fuck of
+            Just a -> a
+            Nothing ->  Empty
+get2 n xs  =
+    let fuck = List.head (List.drop n xs)
+    in
+        case fuck of
+            Just a -> a
+            Nothing ->  []
 
 -- This currently means we have two different screens
 -- the screen where the game is played, and a banner screen
 -- when you change levels.
 type GamePhase
     = Playing
+    | Dead
     | NewLevel
     | GameWon
 
@@ -69,13 +92,39 @@ genDims lvl =
     in
         (rows, round cols)
 
+
+maxPetal : Int
+maxPetal = 10
+
+type BoardSquare = Petal Int Int | Empty
+
 -- Generate petals based on game board size
-genCircles : Coords -> List (List Int)
+genCircles : Coords -> List (List BoardSquare)
 genCircles (rows, cols) = List.map
-                          (\_ -> List.map (\_ -> 100) (List.range 1 <| cols))
+                          (\_ -> List.map (\_ -> Petal 10 1) (List.range 1 <| cols))
                           (List.range 1 <| rows)
 
--- This is the game state
+tickCircles : List (List BoardSquare) -> Int -> List (List BoardSquare)
+tickCircles board ticks =
+    List.map (\r ->
+                  List.map (\c ->
+                                case c of
+                                    Petal size rate -> (if (modBy rate ticks) == 0
+                                                       then (if size <= 1
+                                                             then
+                                                                 Empty
+                                                             else
+                                                                 Petal (size - 1) rate)
+                                                       else
+                                                           Petal size rate)
+                                    Empty -> (if 0 == 1
+                                              then
+                                                  Petal maxPetal
+                                                  1
+                                              else
+                                                  Empty))
+                                r)
+                  board
 type alias Model =
     -- row/cols: defines the dimension of the game board
     { dims : Coords
@@ -84,11 +133,13 @@ type alias Model =
 
     -- It'd be nice if I could derive dimensions from the content
     -- not additional metadata. For now, this is the current game board state
-    , circles : List (List Int)
+    , circles : List (List BoardSquare)
     , level : Int
 
     -- This determines what the root view should look like
     , phase : GamePhase
+
+    , ticks : Int
     }
 
 -- List of input messages from the game, either by the user or internally
@@ -99,6 +150,8 @@ type Msg
     | Right
     | Invalid
     | ShowBoard
+    | ShowDead
+    | Tick
 
 -- Basic Elm framework
 --
@@ -136,6 +189,8 @@ init _ =
 
       -- For now, generate fully extended petals to start.
       , circles = genCircles dims
+
+      , ticks = 1
       }
     , Cmd.none
     )
@@ -196,7 +251,9 @@ handleKeypress input =
 subscriptions : Model -> Sub Msg
 subscriptions state =
     case state.phase of
-        Playing -> Browser.Events.onKeyDown keyPressDecoder
+        Playing -> Sub.batch [ Browser.Events.onKeyDown keyPressDecoder
+                             , Time.every 500 (\_ -> Tick)
+                             ]
         _ -> Sub.none
 
 -- Move the game player across the board without letting it fall off the
@@ -280,8 +337,37 @@ update msg state =
                 Invalid ->
                     state
 
+                Tick ->
+                    { state
+                        | ticks = state.ticks + 1
+                        , circles = tickCircles state.circles state.ticks
+                    }
                 ShowBoard ->
                     { state | phase = Playing }
+
+                ShowDead ->
+                    -- Even for ShowBoard I should probably do the setup here as
+                    -- its own message rather than in my giant logic chunk
+                    -- under.
+                    -- This being said, this whole thing needs a refactoring.
+                    {  state
+                        | pos = startPos
+                        , circles = genCircles state.dims
+                        , phase = Playing
+                        , ticks = 0
+                    }
+
+        deadstate =
+            let
+                prow = posRow state
+                pcol = posCol state
+                petal = get (pcol - 1) (get2 (prow - 1) state.circles)
+            in
+                case petal of
+                    Petal _ _ -> mvstate
+                    Empty -> { mvstate
+                             | phase = Dead
+                             }
 
         -- If the player has reached the goal level, move to next level.
         -- Set the player back to the starting position.
@@ -290,35 +376,40 @@ update msg state =
         -- later.)
         lvlState =
             if
-                mvstate.pos == mvstate.dims
+                deadstate.phase /= Dead && deadstate.pos == deadstate.dims
             then
                 -- If we were on level 25, we've won the game.
-                if mvstate.level == 25
+                if deadstate.level == 25
                 then
-                    { mvstate | phase = GameWon }
+                    { deadstate | phase = GameWon }
                 else
-                    let newLevel = mvstate.level + 1
+                    let newLevel = deadstate.level + 1
                         newDims = genDims newLevel
                     in
-                        { mvstate
+                        { deadstate
                             | level = newLevel
                             , dims = newDims
                             , pos = startPos
                             , circles = genCircles newDims
                             , phase = NewLevel
+                            , ticks = 0
                         }
             else
-                mvstate
+                deadstate
+
 
         -- If we have triggered a new level (see lvlState.phase) send a command
         -- along with the new state that starts a timer for some amount of time
         -- that, when it fires, will set us back to the game board via an
         -- emitted Msg.
+        --
+        -- Ditto with falling into the water and needing a reset.
         lvlCommand =
             case lvlState.phase of
                 NewLevel ->
                     Process.sleep 2000 |> Task.perform (always ShowBoard)
-
+                Dead ->
+                    Process.sleep 3000 |> Task.perform (always ShowDead)
                 _ ->
                     Cmd.none
     in
@@ -353,33 +444,22 @@ gameView state =
                     -- Render each column
                     (List.indexedMap
                         (\indexc col ->
+                             let
+                                 -- I want player to start at bottom left
+                                 -- and move up-rightwards.
+                                 -- But nature of board will be to start
+                                 -- at top left and move down-rightwards.
+                                 playerHere = ((indexr + 1) == ((dimRows state)
+                                                               - (posRow state) + 1) && (indexc + 1) == (posCol state))
+                                 squareTxt =                                  case col of
+                                     Petal size _ -> (String.padLeft 2 '0'
+                                                          (String.fromInt size) ++
+                                                          if playerHere then "* " else " ")
+                                     Empty -> if playerHere then " XX " else " -- "
+                             in
                             span []
                                 -- Pad each value by a space on each side
-                                [ text " "
-                                , text
-                                    (String.fromInt
-                                        col
-                                    )
-                                , if
-                                    -- Print "*" if the player is located here
-                                    -- an empty space otherwise.
-                                    (indexr + 1)
-                                        -- I want player to start at bottom left
-                                        -- and move up-rightwards.
-                                        -- But nature of board will be to start
-                                        -- at top left and move down-rightwards.
-                                        == (dimRows state)
-                                        - (posRow state)
-                                        + 1
-                                        && indexc
-                                        + 1
-                                        == (posCol state)
-                                  then
-                                    text "*"
-
-                                  else
-                                    text " "
-                                ]
+                                [ text squareTxt ]
                         )
                         row
                     )
@@ -401,9 +481,15 @@ gameView state =
                     , text " Columns: "
                     , text (String.fromInt <| dimCols state)
                     ]
+               , div []
+                   [ text "Ticks: "
+                   , text (String.fromInt state.ticks)
+                   ]
                -- Print an App title, for silly reasons
                , div []
-                    [ text "HACKDAY TOPPLER 0.0000000000000000001"
+                    [ text (if state.phase == Dead
+                            then "TRY AGAIN"
+                            else "HACKDAY TOPPLER 0.0000000000000000001")
                     ]
                ]
         )
@@ -421,6 +507,9 @@ view state =
                     gameWonView
 
                 Playing ->
+                    gameView
+
+                Dead ->
                     gameView
     in
     curView state
