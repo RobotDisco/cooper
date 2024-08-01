@@ -30,6 +30,7 @@ import Task
 type GamePhase
     = Playing
     | NewLevel
+    | GameWon
 
 -- Used for positions on the board
 type alias Coords =
@@ -289,17 +290,21 @@ update msg state =
             if
                 mvstate.pos == mvstate.dims
             then
-                let
-                    newLevel = mvstate.level + 1
-                    newDims = genDims newLevel
-                in
-                    { mvstate
-                        | level = newLevel
-                        , dims = newDims
-                        , pos = startPos
-                        , circles = genCircles newDims
-                        , phase = NewLevel
-                    }
+                -- If we were on level 25, we've won the game.
+                if mvstate.level == 25
+                then
+                    { mvstate | phase = GameWon }
+                else
+                    let newLevel = mvstate.level + 1
+                        newDims = genDims newLevel
+                    in
+                        { mvstate
+                            | level = newLevel
+                            , dims = newDims
+                            , pos = startPos
+                            , circles = genCircles newDims
+                            , phase = NewLevel
+                        }
             else
                 mvstate
 
@@ -325,6 +330,12 @@ newLevelView state =
     div []
         [ text "NEW LEVEL YOOOOOOO !!!! ENTERING LEVEL "
         , text (String.fromInt state.level)
+        ]
+
+gameWonView : Model -> Html Msg
+gameWonView state =
+    div []
+        [ text "YOU HAVE WON THE GAME!!! CONGRATULATIONS!!!!!"
         ]
 
 
@@ -403,6 +414,9 @@ view state =
             case state.phase of
                 NewLevel ->
                     newLevelView
+
+                GameWon ->
+                    gameWonView
 
                 Playing ->
                     gameView
