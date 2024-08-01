@@ -37,11 +37,38 @@ type alias Coords =
     -- Second :: current column
     ( Int, Int )
 
+-- A global constant indicating the position where the player should
+-- start on a new game board.
+startPos : Coords
+startPos = (1,1)
+
+-- Current player location row
+posRow : Model -> Int
+posRow state = Tuple.first state.pos
+
+-- Current player location column
+posCol : Model -> Int
+posCol state = Tuple.second state.pos
+
+-- Current board size in rows
+dimRows : Model -> Int
+dimRows state = Tuple.first state.dims
+
+-- Current board size in colums
+dimCols : Model -> Int
+dimCols state = Tuple.second state.dims
+
+
+-- Generate petals based on game board size
+genCircles : Coords -> List (List Int)
+genCircles (rows, cols) = List.map
+                          (\_ -> List.map (\_ -> 100) (List.range 1 <| cols))
+                          (List.range 1 <| rows)
+
 -- This is the game state
 type alias Model =
     -- row/cols: defines the dimension of the game board
-    { rows : Int
-    , cols : Int
+    { dims : Coords
     -- current player position
     , pos : Coords
 
@@ -82,30 +109,25 @@ main =
 init : () -> ( Model, Cmd Msg )
 init _ =
     let
-        rows =
-            4
-
-        cols =
-            7
+        startRows = 4
+        startCols = 7
+        startLvl = 1
+        dims = (startRows, startCols)
     in
     ( { -- Player coordinates
         pos = startPos
 
       -- Board dimensions
-      , rows = rows
-      , cols = cols
+      , dims = dims
 
       -- Game progression
-      , level = 1
+      , level = startLvl
 
       -- The game starts on the Game Board
       , phase = Playing
 
       -- For now, generate fully extended petals to start.
-      , circles =
-            List.map
-                (\_ -> List.map (\_ -> 100) (List.range 1 cols))
-                (List.range 1 rows)
+      , circles = genCircles dims
       }
     , Cmd.none
     )
@@ -167,11 +189,6 @@ subscriptions : Model -> Sub Msg
 subscriptions _ =
     Browser.Events.onKeyDown keyPressDecoder
 
--- A global constant indicating the position where the player should
--- start on a new game board.
-startPos : Coords
-startPos = (1,1)
-
 -- Move the game player across the board without letting it fall off the
 -- screen.
 -- When you're not on the gameplay screen, don't allow the player to be moved.
@@ -184,13 +201,13 @@ movePos offset state =
                     1
 
                 maxRow =
-                    state.rows
+                    dimRows state
 
                 minCol =
                     1
 
                 maxCol =
-                    state.cols
+                    dimCols state
 
                 offsetRow =
                     Tuple.first offset
@@ -199,10 +216,10 @@ movePos offset state =
                     Tuple.second offset
 
                 newRow =
-                    Tuple.first state.pos + offsetRow
+                    posRow state + offsetRow
 
                 newCol =
-                    Tuple.second state.pos + offsetCol
+                    posCol state + offsetCol
 
                 clipRow =
                     max minRow <| min maxRow newRow
@@ -262,7 +279,7 @@ update msg state =
         -- later.)
         lvlState =
             if
-                mvstate.pos == (mvstate.rows, mvstate.cols)
+                mvstate.pos == mvstate.dims
             then
                 { mvstate
                     | level = mvstate.level + 1
@@ -326,12 +343,12 @@ gameView state =
                                         -- and move up-rightwards.
                                         -- But nature of board will be to start
                                         -- at top left and move down-rightwards.
-                                        == state.rows
-                                        - Tuple.first state.pos
+                                        == (dimRows state)
+                                        - (posRow state)
                                         + 1
                                         && indexc
                                         + 1
-                                        == Tuple.second state.pos
+                                        == (posCol state)
                                   then
                                     text "*"
 
@@ -345,7 +362,8 @@ gameView state =
             state.circles
             -- Print the player position coordinates for debugging purposes.
             ++ [ div []
-                    [ text (String.fromInt (Tuple.first state.pos))
+                    [ text "Position: "
+                    , text (String.fromInt (Tuple.first state.pos))
                     , text " "
                     , text (String.fromInt (Tuple.second state.pos))
                     ]
@@ -353,6 +371,10 @@ gameView state =
                , div []
                     [ text "Level: "
                     , text (String.fromInt state.level)
+                    , text " Rows: "
+                    , text (String.fromInt <| dimRows state)
+                    , text " Columns: "
+                    , text (String.fromInt <| dimCols state)
                     ]
                -- Print an App title, for silly reasons
                , div []
