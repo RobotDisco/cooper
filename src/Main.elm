@@ -58,6 +58,15 @@ dimRows state = Tuple.first state.dims
 dimCols : Model -> Int
 dimCols state = Tuple.second state.dims
 
+-- Determine board size based on input level
+-- Cal to a certain size to not get ridiculous.
+genDims : Int -> Coords
+genDims lvl =
+    let
+        cols = min 16 <| 6.0 + toFloat lvl
+        rows = cols / 2.0 |> ceiling
+    in
+        (rows, round cols)
 
 -- Generate petals based on game board size
 genCircles : Coords -> List (List Int)
@@ -109,10 +118,8 @@ main =
 init : () -> ( Model, Cmd Msg )
 init _ =
     let
-        startRows = 4
-        startCols = 7
         startLvl = 1
-        dims = (startRows, startCols)
+        dims = genDims startLvl
     in
     ( { -- Player coordinates
         pos = startPos
@@ -275,19 +282,24 @@ update msg state =
 
         -- If the player has reached the goal level, move to next level.
         -- Set the player back to the starting position.
+        -- Generate a new game board appropriate to the new level.
         -- Also set the game board to a transition banner (we'll escape from it
         -- later.)
         lvlState =
             if
                 mvstate.pos == mvstate.dims
             then
-                { mvstate
-                    | level = mvstate.level + 1
-                    , pos = ( 1, 1 )
-                    , phase =
-                        NewLevel
-                }
-
+                let
+                    newLevel = mvstate.level + 1
+                    newDims = genDims newLevel
+                in
+                    { mvstate
+                        | level = newLevel
+                        , dims = newDims
+                        , pos = startPos
+                        , circles = genCircles newDims
+                        , phase = NewLevel
+                    }
             else
                 mvstate
 
